@@ -36,6 +36,8 @@ docs/
   verificacion.md ....... cómo PROBAR cada ítem de la rúbrica end-to-end
   aws-learner-lab-hallazgos.md .. qué servicios están disponibles en el lab (se llena en Fase 0)
 
+  fuentes/               documentos originales (enunciado del curso + modelo de datos del aeropuerto)
+
   plan/                    plan detallado por sección (tareas con ID, responsable, estimación, DoD)
     README.md ............ índice y orden de lectura de los planes
     distribucion-trabajo.md .. reparto global: RACI, carga por persona, dependencias entre personas
