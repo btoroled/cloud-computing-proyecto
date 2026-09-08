@@ -22,7 +22,7 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 | ✅ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
 | ☐ | BE-INT-01 | VPC + subredes privadas + IGW/NAT + Security Groups | 1d | Learner Lab OK | SGs mínimos aplicados |
 | ☐ | BE-INT-02 | 3 EC2: VM-PROD-1, VM-PROD-2, VM-DB + acceso por SSM (sin puerto 22 público) | 0.5d | BE-INT-01 | Acceso por SSM funcionando |
-| ☐ | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | PNG compartido en el repo docs |
+| 🟡 | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | PNG compartido en el repo docs |
 
 ## F1 — Núcleo + deploy v1 (Sáb 6 – Sáb 12 · Hito 1)
 
@@ -136,3 +136,10 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 - `aeropuerto-infra-deploy/compose/vm-db/` (mysql 8 + postgres 16 + mongo 7, healthchecks, volúmenes).
 - `aeropuerto-infra-deploy/compose/vm-prod/` (nginx + MS1..MS5 desde GHCR, `.env.example`).
 - **Pendiente:** desplegarlos en las EC2 cuando existan (depende de BE-INT-02) y de que haya imágenes en GHCR.
+
+### 🟡 DA-01 — boceto v0 del diagrama (2026-09-08)
+
+- `diagramas/arquitectura-solucion.md` — diagrama Mermaid con la topología completa (VPC, subredes,
+  API Gateway+VPC Link, ALB, VM-PROD/DB/INGESTA, S3/Glue/Athena, Amplify, SSM/CloudWatch, GHCR).
+- **Pendiente:** `.drawio` + PNG con nombres reales para el informe (DA-03, F2).
+- Renderiza directo en GitHub; sirve para la exposición virtual del Hito 1.
