@@ -22,7 +22,7 @@ y el sentido de cada flecha; no hay servicios "fantasma" ni omitidos respecto al
 
 | Trabajo | Responsable | Consultado |
 |---|---|---|
-| Diagrama completo (draw.io) | **Lead** | Dev D (Data Science), Dev E (Frontend) |
+| Diagrama completo (draw.io) | **Benja** | Fabricio (Data Science), Alexander (Frontend) |
 | Revisión final con el equipo | Todos | — |
 
 ---
@@ -47,13 +47,13 @@ y el sentido de cada flecha; no hay servicios "fantasma" ni omitidos respecto al
 
 | ID | Tarea | Resp. | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|---|
-| DA-01 | Boceto v0 con la topología planeada (guía para el equipo) | Lead | 0.5d | F0 | [arquitectura](../arquitectura.md) | PNG compartido en el repo docs |
-| DA-02 | v1 tras validar Learner Lab: fijar ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no | Lead | 0.5d | F1 | [hallazgos Learner Lab](../aws-learner-lab-hallazgos.md) | Diagrama refleja las decisiones tomadas |
-| DA-03 | v2 final: nombres reales de recursos, todos los servicios usados, IDs de subred/SG | Lead | 0.5d | F2 | despliegue F2 | Coincide 1:1 con lo desplegado |
-| DA-04 | Revisión cruzada con Dev D (DS) y Dev E (Frontend) | Lead + Dev D + Dev E | 0.25d | F2 | DA-03 | Sin observaciones pendientes |
-| DA-05 | Export PNG + insertar en informe y PPT | Lead | 0.25d | F2/F3 | DA-04 | PNG en `informe/` y `ppt/` |
+| DA-01 | Boceto v0 con la topología planeada (guía para el equipo) | Benja | 0.5d | F0 | [arquitectura](../arquitectura.md) | PNG compartido en el repo docs |
+| DA-02 | v1 tras validar Learner Lab: fijar ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no | Benja | 0.5d | F1 | [hallazgos Learner Lab](../aws-learner-lab-hallazgos.md) | Diagrama refleja las decisiones tomadas |
+| DA-03 | v2 final: nombres reales de recursos, todos los servicios usados, IDs de subred/SG | Benja | 0.5d | F2 | despliegue F2 | Coincide 1:1 con lo desplegado |
+| DA-04 | Revisión cruzada con Fabricio (DS) y Alexander (Frontend) | Benja + Fabricio + Alexander | 0.25d | F2 | DA-03 | Sin observaciones pendientes |
+| DA-05 | Export PNG + insertar en informe y PPT | Benja | 0.25d | F2/F3 | DA-04 | PNG en `informe/` y `ppt/` |
 
-**Carga total ≈ 2 d (Lead).**
+**Carga total ≈ 2 d (Benja).**
 
 ---
 
@@ -70,5 +70,5 @@ y el sentido de cada flecha; no hay servicios "fantasma" ni omitidos respecto al
 | Depende de | Riesgo | Mitigación |
 |---|---|---|
 | Hallazgos del Learner Lab (F0) | Diagrama se hace sobre una arquitectura que luego no se puede desplegar | No congelar hasta DA-02 (post-validación) |
-| Despliegue real F2 | Diagrama desactualizado respecto a lo desplegado | DA-03 se hace **después** de BE-INT-08; el Lead actualiza si algo cambió |
+| Despliegue real F2 | Diagrama desactualizado respecto a lo desplegado | DA-03 se hace **después** de BE-INT-08; Benja actualiza si algo cambió |
 | Decisión Amplify/CloudFront y ALB/NLB | Mostrar un servicio que no se usó | Reflejar solo lo efectivamente desplegado; anotar contingencias como alternativa |

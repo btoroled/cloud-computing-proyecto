@@ -29,14 +29,14 @@ tiene su evidencia (captura/salida) referenciada · sin secciones "TODO" · enla
 
 | Trabajo | Responsable | Aporta |
 |---|---|---|
-| Coordinación y consolidación del informe y el PPT | **Lead** | — |
-| Sección Backend + su evidencia | Dev A (MS1), Dev B (MS2), Dev C (MS3), Dev D (MS4/MS5) | cada quien su microservicio |
-| Sección Transformaciones del modelo (Persona partida, FK suaves) | Dev D | — |
-| Sección Frontend + matriz de cobertura REST | Dev E | — |
-| Sección Data Science (ingesta, Glue, Athena, E/R catálogo) | Dev D | Dev A/B/C (su contenedor) |
-| Sección Arquitectura + diagrama | Lead | — |
-| Guion y ensayo de la demo en vivo | Lead | todos |
-| Slides de Hito 1 (avance) | Lead consolida | cada quien 1–2 slides de su parte |
+| Coordinación y consolidación del informe y el PPT | **Benja** | — |
+| Sección Backend + su evidencia | Guillermo (MS1), Mariano (MS2), Edinson (MS3), Fabricio (MS4/MS5) | cada quien su microservicio |
+| Sección Transformaciones del modelo (Persona partida, FK suaves) | Fabricio | — |
+| Sección Frontend + matriz de cobertura REST | Alexander | — |
+| Sección Data Science (ingesta, Glue, Athena, E/R catálogo) | Fabricio | Guillermo/Mariano/Edinson (su contenedor) |
+| Sección Arquitectura + diagrama | Benja | — |
+| Guion y ensayo de la demo en vivo | Benja | todos |
+| Slides de Hito 1 (avance) | Benja consolida | cada quien 1–2 slides de su parte |
 
 ---
 
@@ -44,16 +44,16 @@ tiene su evidencia (captura/salida) referenciada · sin secciones "TODO" · enla
 
 | # | Sección | Responsable | Evidencia principal |
 |---|---|---|---|
-| 1 | Introducción y objetivos | Lead | — |
-| 2 | Arquitectura de solución | Lead | diagrama `draw.io` + lista de servicios AWS |
-| 3 | Backend — 5 microservicios | Dev A/B/C/D | Swagger de las 5 · `COUNT(*)` ≥ 20 000 en `ticket`/`vuelo`/`incidencias` · log de consumo entre servicios |
-| 3b | E/R por BD SQL + JSON Schema de la NoSQL | Dev A/B/C | 2 diagramas E/R + `docs/er/ms3-mongo-schemas.md` |
-| 4 | Transformaciones del modelo monolítico | Dev D | E/R por servicio; explicación de la jerarquía `Persona` y las FK suaves |
-| 5 | Frontend | Dev E | capturas de las 4 vistas + panel Network con ≥2 métodos por MS · URL de Amplify |
-| 6 | Data Science | Dev D | `aws s3 ls` · Glue console · E/R del catálogo · 4 consultas Athena con resultados · 2 vistas |
-| 7 | Despliegue y seguridad | Lead | `docker compose ps` ×2 · `nc`/`mysql` fallando desde fuera · URL pública HTTPS respondiendo · `RUNBOOK.md` |
-| 8 | Enlaces a repositorios | Lead | `INDEX.md` |
-| 9 | Conclusiones y limitaciones | Lead | contingencias aplicadas (Amplify, VPC Link, etc.) |
+| 1 | Introducción y objetivos | Benja | — |
+| 2 | Arquitectura de solución | Benja | diagrama `draw.io` + lista de servicios AWS |
+| 3 | Backend — 5 microservicios | Guillermo/Mariano/Edinson/Fabricio | Swagger de las 5 · `COUNT(*)` ≥ 20 000 en `ticket`/`vuelo`/`incidencias` · log de consumo entre servicios |
+| 3b | E/R por BD SQL + JSON Schema de la NoSQL | Guillermo/Mariano/Edinson | 2 diagramas E/R + `docs/er/ms3-mongo-schemas.md` |
+| 4 | Transformaciones del modelo monolítico | Fabricio | E/R por servicio; explicación de la jerarquía `Persona` y las FK suaves |
+| 5 | Frontend | Alexander | capturas de las 4 vistas + panel Network con ≥2 métodos por MS · URL de Amplify |
+| 6 | Data Science | Fabricio | `aws s3 ls` · Glue console · E/R del catálogo · 4 consultas Athena con resultados · 2 vistas |
+| 7 | Despliegue y seguridad | Benja | `docker compose ps` ×2 · `nc`/`mysql` fallando desde fuera · URL pública HTTPS respondiendo · `RUNBOOK.md` |
+| 8 | Enlaces a repositorios | Benja | `INDEX.md` |
+| 9 | Conclusiones y limitaciones | Benja | contingencias aplicadas (Amplify, VPC Link, etc.) |
 
 ---
 
@@ -61,16 +61,16 @@ tiene su evidencia (captura/salida) referenciada · sin secciones "TODO" · enla
 
 | ID | Tarea | Resp. | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|---|
-| EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones y placeholders de evidencia | Lead | 0.5d | F1 | — | Plantilla compartida |
-| EX-02 | Slides de avance Hito 1 (1–2 por integrante) + consolidación | Lead + todos | 1d | F1 | avance F1 | PPT de avance listo |
-| EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | Lead | 0.5d | F1 | deploy v1 | Demo de ≤10 min ensayada |
+| EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones y placeholders de evidencia | Benja | 0.5d | F1 | — | Plantilla compartida |
+| EX-02 | Slides de avance Hito 1 (1–2 por integrante) + consolidación | Benja + todos | 1d | F1 | avance F1 | PPT de avance listo |
+| EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | Benja | 0.5d | F1 | deploy v1 | Demo de ≤10 min ensayada |
 | EX-04 | **Exposición virtual con ACL** | Todos | 0.5d | F1 | EX-02/03 | Realizada; feedback del ACL anotado |
 | EX-05 | Carpeta `docs/evidencias/` poblada a medida que cada parte termina | Cada dev | 1d (repartido) | F2 | verificación | Todas las evidencias del checklist H2 presentes |
 | EX-06 | Redacción de cada sección del informe (en paralelo) | Cada dev | 0.5d c/u | F2 | EX-01, EX-05 | Sección completa, sin "TODO" |
-| EX-07 | PPT resumen del Hito 2 (estructura por el Lead, 2–3 slides por integrante) | Lead + todos | 1d | F2/F3 | EX-06 | PPT completo |
-| EX-08 | Consolidación final del informe + revisión cruzada + export **PDF** | Lead | 1d | F3 | EX-06 | PDF final revisado por ≥2 personas |
-| EX-09 | Verificar `INDEX.md` (todos los repos públicos y accesibles) | Lead | 0.25d | F3 | repos | Enlaces abren sin login |
-| EX-10 | **Subida a Canvas** (informe PDF + PPT + enlaces) antes del Dom 20-Set 23:59 | Lead | 0.25d | F3 | EX-07/08/09 | Entrega confirmada en Canvas |
+| EX-07 | PPT resumen del Hito 2 (estructura por Benja, 2–3 slides por integrante) | Benja + todos | 1d | F2/F3 | EX-06 | PPT completo |
+| EX-08 | Consolidación final del informe + revisión cruzada + export **PDF** | Benja | 1d | F3 | EX-06 | PDF final revisado por ≥2 personas |
+| EX-09 | Verificar `INDEX.md` (todos los repos públicos y accesibles) | Benja | 0.25d | F3 | repos | Enlaces abren sin login |
+| EX-10 | **Subida a Canvas** (informe PDF + PPT + enlaces) antes del Dom 20-Set 23:59 | Benja | 0.25d | F3 | EX-07/08/09 | Entrega confirmada en Canvas |
 | EX-11 | Ensayo general de la demo en vivo (Vie 19) + reparto de quién muestra qué | Todos | 0.5d | F2 | code freeze | Demo de ~15 min cronometrada |
 | EX-12 | **Exposición presencial + demo** | Todos | 0.5d | F3 | EX-11 | Realizada |
 

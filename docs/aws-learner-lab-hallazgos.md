@@ -1,6 +1,6 @@
 # Hallazgos del AWS Academy Learner Lab
 
-Se completa en la **Fase 0** (antes del Sáb 6-Set). Dueño: Lead.
+Se completa en la **Fase 0** (antes del Sáb 6-Set). Dueño: Benja.
 
 Objetivo: saber qué servicios están disponibles con `LabRole` y con qué límites, antes de comprometer
 la arquitectura.
