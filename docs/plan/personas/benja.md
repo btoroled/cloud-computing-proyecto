@@ -38,9 +38,9 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 | ☐ | DS-04 | Bucket S3 + estructura de prefijos `raw/ms{1,2,3}/` + política `LabRole` | 0.25d | Learner Lab | `aws s3 ls` muestra el bucket |
 | ☐ | DS-05 | VM-INGESTA (EC2 `t3.small`) + `compose` de los 3 contenedores + acceso lectura a VM-DB | 0.5d | BE-INT-02 | `compose` levanta; alcanza la VM-DB |
 | ☐ | DA-02 | Diagrama v1 tras validar Learner Lab (ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no) | 0.5d | hallazgos Learner Lab | Refleja las decisiones tomadas |
-| ☐ | EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones + placeholders de evidencia | 0.5d | — | Plantilla compartida |
+| 🟡 | EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones + placeholders de evidencia | 0.5d | — | Plantilla compartida |
 | ☐ | EX-02 | Slides de avance Hito 1 (1–2 por integrante) + consolidación | 1d | avance F1 | PPT de avance listo |
-| ☐ | EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | 0.5d | deploy v1 | Demo de ≤10 min ensayada |
+| 🟡 | EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | 0.5d | deploy v1 | Demo de ≤10 min ensayada |
 | ☐ | EX-04 | **Exposición virtual con ACL** (con todo el equipo) | 0.5d | EX-02/03 | Realizada; feedback del ACL anotado |
 
 ## F2 — Completar, 20k, endurecer (Sáb 13 – Vie 19)
@@ -143,3 +143,16 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
   API Gateway+VPC Link, ALB, VM-PROD/DB/INGESTA, S3/Glue/Athena, Amplify, SSM/CloudWatch, GHCR).
 - **Pendiente:** `.drawio` + PNG con nombres reales para el informe (DA-03, F2).
 - Renderiza directo en GitHub; sirve para la exposición virtual del Hito 1.
+
+### 🟡 EX-01 / EX-03 — plantilla del informe + guion de demo (2026-09-08)
+
+- `informe/plantilla-informe.md` — 9 secciones con responsables, placeholders de evidencia `[E-n]` y
+  anexo de trazabilidad rúbrica → evidencia.
+- `informe/guion-demo.md` — guion para Hito 1 (≤10 min) y presencial (~15 min) + checklist previo.
+- **Pendiente:** llenar las secciones en F2 (EX-06) y ensayar la demo (EX-11).
+
+### 🟡 BE-INT-07 / BE-INT-08 — scripts de operación (2026-09-08)
+
+- `aeropuerto-infra-deploy/scripts/`: `user-data-*.sh`, `provision.sh` (aws-cli), `smoke-e2e.sh`
+  (prueba de humo E2E), `backup-db.sh` / `restore-db.sh`.
+- **Pendiente:** correr `smoke-e2e.sh` contra la URL real (depende de BE-INT-06).
