@@ -14,7 +14,7 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
-| ☐ | — | Crear la organización GitHub + los 9 repos (README + LICENSE + plantilla) e invitar al equipo | 0.5d | — | 9 repos creados; equipo con acceso |
+| ✅ | — | Crear la organización GitHub + los 9 repos (README + LICENSE + plantilla) e invitar al equipo | 0.5d | — | 9 repos creados; equipo con acceso |
 | ☐ | — | Validar Learner Lab en orden EC2+VPC → S3 → Glue+Athena → API Gateway+VPC Link → Amplify y escribir [`aws-learner-lab-hallazgos.md`](../../aws-learner-lab-hallazgos.md) | 0.5d | Learner Lab | Doc de hallazgos con qué hay y qué no |
 | ☐ | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
 | ☐ | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
@@ -87,3 +87,21 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 - **BE-INT-06 (API Gateway + VPC Link)** habilita el consumo real de todos → validar viabilidad en F0, cerrar en F1.
 - **DS-04/DS-05 (S3 + VM-INGESTA)** habilitan toda la ingesta de Data Science.
 - **contratos/enums (BE-TX-01)** son prerequisito de todos los microservicios.
+
+---
+
+## Registro de avance
+
+### ✅ Crear org + 9 repos + invitar al equipo (2026-09-08)
+
+- Organización `Cloud-MLA` creada; **6 miembros** unidos (btoroled, Guillermo-Heredia, MarianoUtec,
+  Edinson695, AIexander-lx, cruz-eng) — sin invitaciones pendientes.
+- **9 repos** (8 en `Cloud-MLA` + `cloud-computing-proyecto` en `btoroled/`, se queda ahí):
+  - Ya existían: `aeropuerto-frontend`, `aeropuerto-data-science`, `ms3-infraestructura-api`,
+    `ms4-manifiesto-api`, `ms5-analitica-api` — todos **públicos**.
+  - Creados ahora (públicos, README + `.gitignore` + MIT): `ms1-pasajeros-api`, `ms2-vuelos-api`,
+    `aeropuerto-infra-deploy`.
+- **Pendiente menor:** `aeropuerto-frontend` no tiene archivo `LICENSE` (los demás sí, MIT) — agregarlo
+  por PR normal (el intento por API quedó bloqueado).
+- **Siguiente:** la "plantilla base" común de repo es **BE-TX-02** (tarea aparte); los repos nuevos
+  quedaron con README mínimo a la espera de esa plantilla.
