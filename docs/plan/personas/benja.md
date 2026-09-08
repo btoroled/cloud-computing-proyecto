@@ -16,10 +16,10 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 |---|---|---|---|---|---|
 | ✅ | — | Crear la organización GitHub + los 9 repos (README + LICENSE + plantilla) e invitar al equipo | 0.5d | — | 9 repos creados; equipo con acceso |
 | ☐ | — | Validar Learner Lab en orden EC2+VPC → S3 → Glue+Athena → API Gateway+VPC Link → Amplify y escribir [`aws-learner-lab-hallazgos.md`](../../aws-learner-lab-hallazgos.md) | 0.5d | Learner Lab | Doc de hallazgos con qué hay y qué no |
-| ☐ | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
-| ☐ | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
-| ☐ | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | Imágenes construyen y publican a GHCR |
-| ☐ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
+| 🟡 | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
+| 🟡 | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
+| 🟡 | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | Imágenes construyen y publican a GHCR |
+| ✅ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
 | ☐ | BE-INT-01 | VPC + subredes privadas + IGW/NAT + Security Groups | 1d | Learner Lab OK | SGs mínimos aplicados |
 | ☐ | BE-INT-02 | 3 EC2: VM-PROD-1, VM-PROD-2, VM-DB + acceso por SSM (sin puerto 22 público) | 0.5d | BE-INT-01 | Acceso por SSM funcionando |
 | ☐ | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | PNG compartido en el repo docs |
@@ -103,5 +103,26 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
     `aeropuerto-infra-deploy`.
 - **Pendiente menor:** `aeropuerto-frontend` no tiene archivo `LICENSE` (los demás sí, MIT) — agregarlo
   por PR normal (el intento por API quedó bloqueado).
-- **Siguiente:** la "plantilla base" común de repo es **BE-TX-02** (tarea aparte); los repos nuevos
-  quedaron con README mínimo a la espera de esa plantilla.
+
+### 🟡 Validar Learner Lab (2026-09-08)
+
+- `docs/aws-learner-lab-hallazgos.md` convertido en checklist accionable (6 bloques con "cómo probar" +
+  columnas de resultado).
+- `aeropuerto-infra-deploy/RUNBOOK.md` v1: provisión inicial paso a paso, reinicio tras corte, limpieza.
+- **Pendiente:** ejecutar la validación en la consola del Learner Lab y rellenar la tabla.
+
+### ✅ BE-TX-08 — Contrato de errores (2026-09-08)
+
+- `docs/contratos/errores.md`: formato JSON único, mapa de códigos HTTP (400/404/409/422/502/503/500),
+  catálogo de `error.code` (comunes + de dominio), propagación con `X-Request-Id`, notas por stack.
+
+### 🟡 BE-TX-01 — enums + rangos de ID (2026-09-08)
+
+- `docs/contratos/enums.md` ya tenía el diccionario de enums; le agregué la sección **Rangos de ID**
+  (dueño por entidad) consolidando el plan §3.
+- **Pendiente:** revisión y OK del equipo en el standup.
+
+### 🟡 BE-TX-02 / BE-TX-04 / BE-TX-05 — plantilla + imágenes base + CI
+
+- En progreso: `aeropuerto-infra-deploy/plantilla/` (`.editorconfig`, `.env.example`, README base,
+  Dockerfiles Py/Java/Node con healthcheck, workflow `build-push-ghcr.yml`).
