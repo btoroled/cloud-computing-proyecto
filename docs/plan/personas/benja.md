@@ -17,7 +17,7 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 | ✅ | — | Crear la organización GitHub + los 9 repos (README + LICENSE + plantilla) e invitar al equipo | 0.5d | — | 9 repos creados; equipo con acceso |
 | ☐ | — | Validar Learner Lab en orden EC2+VPC → S3 → Glue+Athena → API Gateway+VPC Link → Amplify y escribir [`aws-learner-lab-hallazgos.md`](../../aws-learner-lab-hallazgos.md) | 0.5d | Learner Lab | Doc de hallazgos con qué hay y qué no |
 | 🟡 | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
-| 🟡 | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
+| ✅ | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
 | 🟡 | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | Imágenes construyen y publican a GHCR |
 | ✅ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
 | ☐ | BE-INT-01 | VPC + subredes privadas + IGW/NAT + Security Groups | 1d | Learner Lab OK | SGs mínimos aplicados |
@@ -128,8 +128,15 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
   `docker/Dockerfile.{python,java,node}` (healthcheck + no-root; MS2 con `-Xmx256m`),
   `github/workflows/build-push-ghcr.yml` (push de tag `vX.Y` → `ghcr.io/cloud-mla/<repo>`).
 - `aeropuerto-infra-deploy/nginx/nginx.conf`: reverse proxy por path (BE-TX-06).
-- **Pendiente:** que cada dev copie la plantilla a su repo y que corra el primer tag para publicar imagen.
-  PR: `Cloud-MLA/aeropuerto-infra-deploy#1`.
+- PR: `Cloud-MLA/aeropuerto-infra-deploy#1`.
+
+### ✅ BE-TX-02 — archivos base aplicados a los repos de MS (2026-09-08)
+
+- `ms1` / `ms2` / `ms4` / `ms5`: PR `chore/plantilla-base` con `.editorconfig`, `.gitignore` (ms1/ms2),
+  `.env.example` por stack, `.github/workflows/build-push-ghcr.yml`, README con convenciones + checklist
+  de scaffold. **Sin código de app** (eso es `MSx-01` de cada dev).
+- `ms3` mantiene su propio scaffold (Edinson ya avanzó MS3-01).
+- **Pendiente:** que cada dev haga su scaffold (`MSx-01`) y corra el primer `git tag` para publicar imagen.
 
 ### 🟡 BE-INT-03 / BE-INT-04 — compose de VM-DB y VM-PROD (2026-09-08)
 
