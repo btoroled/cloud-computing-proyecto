@@ -27,10 +27,10 @@ navegable desde el menú · sin errores en consola · responsive mínimo (funcio
 
 | Trabajo | Responsable | Apoyo |
 |---|---|---|
-| Toda la SPA (scaffold, 4 vistas, deploy) | **Dev E** | — |
-| Gráficos del Dashboard (MS5) | Dev E | Dev D |
-| Página Swagger-UI agregada | Dev E | Lead (rutas nginx) |
-| CORS en API Gateway / endpoints | Lead | Dev E |
+| Toda la SPA (scaffold, 4 vistas, deploy) | **Alexander** | — |
+| Gráficos del Dashboard (MS5) | Alexander | Fabricio |
+| Página Swagger-UI agregada | Alexander | Benja (rutas nginx) |
+| CORS en API Gateway / endpoints | Benja | Alexander |
 
 ---
 
@@ -52,23 +52,23 @@ Cada celda cubre ≥2 métodos → requisito satisfecho. Se documenta con captur
 
 | ID | Tarea | Resp. | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|---|
-| FE-01 | Scaffold React + Vite + router + estructura de carpetas | Dev E | 0.5d | F0 | — | `npm run dev` levanta app vacía con menú |
-| FE-02 | Cliente HTTP (axios) con `baseURL` por env + interceptores de error/loading | Dev E | 0.5d | F0 | BE-TX-08 | Errores se muestran como toast/banner |
-| FE-03 | Pipeline de despliegue en **Amplify** (build en push a `main`) | Dev E | 0.5d | F0 | Learner Lab (R1) | URL pública sirve la app |
-| FE-03b | *Contingencia:* bucket S3 static website + CloudFront + script de deploy | Dev E | 0.5d | F0 | si Amplify no está | URL de CloudFront sirve la app |
-| FE-04 | Layout base (header, navegación, tema, componentes de loading/error/empty) | Dev E | 0.5d | F0 | FE-01 | Reutilizable por las 4 vistas |
-| FE-05 | Mock/wireframe de las 4 vistas (sin datos) para validar con el equipo | Dev E | 0.5d | F0 | FE-04 | Revisado en standup |
-| FE-06 | **Vista "Consulta de vuelo + manifiesto"** — `GET /vuelos`, `GET /vuelos/{id}` (MS2) + `GET /manifiesto/{id}`, `/resumen` (MS4) | Dev E | 1.5d | F1 | MS2-05, MS4-02 | Busca vuelo y muestra manifiesto consolidado |
-| FE-07 | Deploy de Hito 1: la app en Amplify consume **≥1 MS con ≥2 métodos REST** (MS2) | Dev E | 0.25d | F1 | FE-06 | Evidencia Network con ≥2 requests a MS2 |
-| FE-08 | **Vista "Emisión de ticket / check-in"** — `GET /categorias-migratorias`, `POST /tickets`, `POST /tickets/{id}/checkin` (MS1) + `GET /vuelos` (MS2) | Dev E | 1.5d | F2 | MS1-05/07 | Emite ticket y hace check-in end-to-end |
-| FE-09 | **Vista "Recursos e incidencias"** — `GET /recursos?estado=`, `POST /incidencias`, `GET /incidencias`, `PATCH /recursos/{id}/estado` (MS3) | Dev E | 1.5d | F2 | MS3-03/05/07 | Lista recursos libres y crea incidencia |
-| FE-10 | **Vista "Dashboard de crisis"** — 5 indicadores/gráficos desde MS5 | Dev E + Dev D | 2d | F2 | MS5-03..07 | 5 tarjetas/gráficos con datos reales de Athena |
-| FE-11 | Página **Swagger-UI agregada** (lista los 5 `openapi.json` vía selector) | Dev E | 0.5d | F2 | BE-TX-03 | `/docs` agregado navegable |
-| FE-12 | Pulido: responsive, estados vacíos, mensajes de error de dependencia caída | Dev E | 1d | F2 | FE-06..10 | Sin errores de consola; funciona en móvil |
-| FE-13 | README + capturas para el informe (matriz de cobertura REST) | Dev E | 0.5d | F2 | FE-12 | Sección de informe lista |
+| FE-01 | Scaffold React + Vite + router + estructura de carpetas | Alexander | 0.5d | F0 | — | `npm run dev` levanta app vacía con menú |
+| FE-02 | Cliente HTTP (axios) con `baseURL` por env + interceptores de error/loading | Alexander | 0.5d | F0 | BE-TX-08 | Errores se muestran como toast/banner |
+| FE-03 | Pipeline de despliegue en **Amplify** (build en push a `main`) | Alexander | 0.5d | F0 | Learner Lab (R1) | URL pública sirve la app |
+| FE-03b | *Contingencia:* bucket S3 static website + CloudFront + script de deploy | Alexander | 0.5d | F0 | si Amplify no está | URL de CloudFront sirve la app |
+| FE-04 | Layout base (header, navegación, tema, componentes de loading/error/empty) | Alexander | 0.5d | F0 | FE-01 | Reutilizable por las 4 vistas |
+| FE-05 | Mock/wireframe de las 4 vistas (sin datos) para validar con el equipo | Alexander | 0.5d | F0 | FE-04 | Revisado en standup |
+| FE-06 | **Vista "Consulta de vuelo + manifiesto"** — `GET /vuelos`, `GET /vuelos/{id}` (MS2) + `GET /manifiesto/{id}`, `/resumen` (MS4) | Alexander | 1.5d | F1 | MS2-05, MS4-02 | Busca vuelo y muestra manifiesto consolidado |
+| FE-07 | Deploy de Hito 1: la app en Amplify consume **≥1 MS con ≥2 métodos REST** (MS2) | Alexander | 0.25d | F1 | FE-06 | Evidencia Network con ≥2 requests a MS2 |
+| FE-08 | **Vista "Emisión de ticket / check-in"** — `GET /categorias-migratorias`, `POST /tickets`, `POST /tickets/{id}/checkin` (MS1) + `GET /vuelos` (MS2) | Alexander | 1.5d | F2 | MS1-05/07 | Emite ticket y hace check-in end-to-end |
+| FE-09 | **Vista "Recursos e incidencias"** — `GET /recursos?estado=`, `POST /incidencias`, `GET /incidencias`, `PATCH /recursos/{id}/estado` (MS3) | Alexander | 1.5d | F2 | MS3-03/05/07 | Lista recursos libres y crea incidencia |
+| FE-10 | **Vista "Dashboard de crisis"** — 5 indicadores/gráficos desde MS5 | Alexander + Fabricio | 2d | F2 | MS5-03..07 | 5 tarjetas/gráficos con datos reales de Athena |
+| FE-11 | Página **Swagger-UI agregada** (lista los 5 `openapi.json` vía selector) | Alexander | 0.5d | F2 | BE-TX-03 | `/docs` agregado navegable |
+| FE-12 | Pulido: responsive, estados vacíos, mensajes de error de dependencia caída | Alexander | 1d | F2 | FE-06..10 | Sin errores de consola; funciona en móvil |
+| FE-13 | README + capturas para el informe (matriz de cobertura REST) | Alexander | 0.5d | F2 | FE-12 | Sección de informe lista |
 
-**Carga total Dev E ≈ 13 d** en la ventana F0–F2 (≈ 12 días hábiles) → ajustado; el Dashboard (FE-10)
-lo comparte con Dev D y el E/R del data lake se le reasigna solo si hay holgura.
+**Carga total Alexander ≈ 13 d** en la ventana F0–F2 (≈ 12 días hábiles) → ajustado; el Dashboard (FE-10)
+lo comparte con Fabricio y el E/R del data lake se le reasigna solo si hay holgura.
 
 ---
 
@@ -102,7 +102,7 @@ FE-01..05 (F0, sin backend) ──► FE-06 (necesita MS2-05 + MS4-02) ──►
 | Riesgo | Mitigación |
 |---|---|
 | **Amplify no disponible** en Learner Lab (R1) | Contingencia FE-03b: S3 static website + CloudFront; decidir el Vie 4 |
-| **CORS** bloquea llamadas desde el navegador a API Gateway | Configurar CORS en el HTTP API (Lead); probar en F1 |
+| **CORS** bloquea llamadas desde el navegador a API Gateway | Configurar CORS en el HTTP API (Benja); probar en F1 |
 | **MS5 se atrasa** → Dashboard sin datos | FE-10 contra respuestas mock; conectar en cuanto MS5 esté |
-| **Carga de Dev E alta** (~13 d) | Dev D toma los gráficos (FE-10); recortar pulido (FE-12) a lo mínimo si aprieta |
+| **Carga de Alexander alta** (~13 d) | Fabricio toma los gráficos (FE-10); recortar pulido (FE-12) a lo mínimo si aprieta |
 | **URL de API Gateway cambia** tras cada recreación de infra | Leerla de una variable de entorno del build; no hardcodear |

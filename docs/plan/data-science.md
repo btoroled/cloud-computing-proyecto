@@ -32,14 +32,14 @@ filas; las 2 vistas aparecen en `SHOW VIEWS IN aeropuerto_lake`.
 
 | Sub-parte | Responsable | Apoyo |
 |---|---|---|
-| `seeds/` — generador de datos ficticios compartido | **Dev D** | Dev A/B/C (validan su parte) |
-| VM-INGESTA (EC2, `compose`, `LabRole`, red) + bucket S3 | **Lead** | — |
-| `ingesta-ms1` (MySQL → CSV → S3) | **Dev A** | Dev D |
-| `ingesta-ms2` (PostgreSQL → CSV → S3) | **Dev B** | Dev D |
-| `ingesta-ms3` (MongoDB → **aplanado** → CSV/JSON → S3) | **Dev C** | Dev D |
-| Catálogo Glue (database + crawlers + esquemas) | **Dev D** | Lead (permisos) |
-| Consultas + vistas Athena | **Dev D** | — |
-| E/R del catálogo de datos | **Dev D** *(reasignable a Dev E)* | — |
+| `seeds/` — generador de datos ficticios compartido | **Fabricio** | Guillermo/Mariano/Edinson (validan su parte) |
+| VM-INGESTA (EC2, `compose`, `LabRole`, red) + bucket S3 | **Benja** | — |
+| `ingesta-ms1` (MySQL → CSV → S3) | **Guillermo** | Fabricio |
+| `ingesta-ms2` (PostgreSQL → CSV → S3) | **Mariano** | Fabricio |
+| `ingesta-ms3` (MongoDB → **aplanado** → CSV/JSON → S3) | **Edinson** | Fabricio |
+| Catálogo Glue (database + crawlers + esquemas) | **Fabricio** | Benja (permisos) |
+| Consultas + vistas Athena | **Fabricio** | — |
+| E/R del catálogo de datos | **Fabricio** *(reasignable a Alexander)* | — |
 
 ---
 
@@ -74,21 +74,21 @@ Claves de join del E/R del catálogo: `vuelo_id`, `pasajero_id` (`persona.id`), 
 
 | ID | Tarea | Resp. | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|---|
-| DS-01 | Estructura del repo `aeropuerto-data-science` (`seeds/`, `ingesta/`, `glue/`, `athena/`) | Dev D | 0.25d | F0 | — | Repo creado desde plantilla |
-| DS-02 | `seeds/` v1: generador con `SEED` fijo, orden **MS2→MS1→MS3**, rangos de ID de [plan general §3](../plan-de-trabajo.md#3-datos-de-prueba-integridad-entre-servicios) | Dev D | 1.5d | F0/F1 | enums | Genera CSV coherentes entre los 3 dominios |
-| DS-03 | Escribir las 5 consultas (Q1–Q5) en **SQL sobre Postgres local** para validar la lógica | Dev D | 1d | F0 | modelo | Las 5 devuelven resultados razonables en local |
-| DS-04 | **Bucket S3** + estructura de prefijos + política de acceso (`LabRole`) | Lead | 0.25d | F1 | Learner Lab | `aws s3 ls` muestra el bucket |
-| DS-05 | **VM-INGESTA** (EC2 `t3.small`) + `docker compose` de los 3 contenedores + acceso lectura a VM-DB | Lead | 0.5d | F1 | BE-INT-02 | `compose` levanta; alcanza la VM-DB |
-| DS-06 | **`ingesta-ms1`**: conectar MySQL, `SELECT *` 100% por tabla, escribir CSV, `put_object` a `raw/ms1/` | Dev A | 1d | F1 | DS-04, MS1-02 | Archivos de las 6 tablas en S3 |
-| DS-07 | **`ingesta-ms2`**: ídem PostgreSQL → `raw/ms2/` (8 tablas) | Dev B | 1d | F2 | DS-04, MS2-02 | Archivos de las 8 tablas en S3 |
-| DS-08 | **`ingesta-ms3`**: leer colecciones + **aplanar `incidencias`** en `incidencia` / `incidencia_recurso` / `incidencia_vuelo` → `raw/ms3/` | Dev C | 1.5d | F2 | DS-04, MS3-02 | 5 archivos en S3; conteos cuadran |
-| DS-09 | Glue: database `aeropuerto_lake` + 1 crawler por prefijo `raw/msX/` | Dev D | 0.75d | F2 | DS-06..08 | Tablas visibles en el catálogo |
-| DS-10 | Revisión/ajuste de esquemas inferidos por el crawler (tipos, `timestamp`, columnas) | Dev D | 0.75d | F2 | DS-09 | `SELECT * LIMIT 10` correcto por tabla (R9) |
-| DS-11 | Implementar Q1–Q5 en **Athena** (workgroup + output S3) | Dev D | 1.5d | F2 | DS-10 | Las 5 corren y devuelven filas |
-| DS-12 | Crear las 2 **vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Dev D | 0.5d | F2 | DS-11 | `SHOW VIEWS` las lista; DDL guardado en `athena/` |
-| DS-13 | **E/R del catálogo** (`diagramas/er-catalogo-datalake.drawio`) con todas las tablas + claves de join | Dev D / Dev E | 1d | F2 | DS-09 | Diagrama entregado |
-| DS-14 | Evidencias en `docs/evidencias/athena/` (capturas de las 5 queries + 2 vistas + `aws s3 ls` + Glue console) | Dev D | 0.5d | F2 | DS-11..13 | Carpeta de evidencias completa |
-| DS-15 | Carga masiva real: ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Dev A/B/C | 0.5d | F2 | Backend F2 (20k) | S3 con el 100% de los datos de las 3 BD |
+| DS-01 | Estructura del repo `aeropuerto-data-science` (`seeds/`, `ingesta/`, `glue/`, `athena/`) | Fabricio | 0.25d | F0 | — | Repo creado desde plantilla |
+| DS-02 | `seeds/` v1: generador con `SEED` fijo, orden **MS2→MS1→MS3**, rangos de ID de [plan general §3](../plan-de-trabajo.md#3-datos-de-prueba-integridad-entre-servicios) | Fabricio | 1.5d | F0/F1 | enums | Genera CSV coherentes entre los 3 dominios |
+| DS-03 | Escribir las 5 consultas (Q1–Q5) en **SQL sobre Postgres local** para validar la lógica | Fabricio | 1d | F0 | modelo | Las 5 devuelven resultados razonables en local |
+| DS-04 | **Bucket S3** + estructura de prefijos + política de acceso (`LabRole`) | Benja | 0.25d | F1 | Learner Lab | `aws s3 ls` muestra el bucket |
+| DS-05 | **VM-INGESTA** (EC2 `t3.small`) + `docker compose` de los 3 contenedores + acceso lectura a VM-DB | Benja | 0.5d | F1 | BE-INT-02 | `compose` levanta; alcanza la VM-DB |
+| DS-06 | **`ingesta-ms1`**: conectar MySQL, `SELECT *` 100% por tabla, escribir CSV, `put_object` a `raw/ms1/` | Guillermo | 1d | F1 | DS-04, MS1-02 | Archivos de las 6 tablas en S3 |
+| DS-07 | **`ingesta-ms2`**: ídem PostgreSQL → `raw/ms2/` (8 tablas) | Mariano | 1d | F2 | DS-04, MS2-02 | Archivos de las 8 tablas en S3 |
+| DS-08 | **`ingesta-ms3`**: leer colecciones + **aplanar `incidencias`** en `incidencia` / `incidencia_recurso` / `incidencia_vuelo` → `raw/ms3/` | Edinson | 1.5d | F2 | DS-04, MS3-02 | 5 archivos en S3; conteos cuadran |
+| DS-09 | Glue: database `aeropuerto_lake` + 1 crawler por prefijo `raw/msX/` | Fabricio | 0.75d | F2 | DS-06..08 | Tablas visibles en el catálogo |
+| DS-10 | Revisión/ajuste de esquemas inferidos por el crawler (tipos, `timestamp`, columnas) | Fabricio | 0.75d | F2 | DS-09 | `SELECT * LIMIT 10` correcto por tabla (R9) |
+| DS-11 | Implementar Q1–Q5 en **Athena** (workgroup + output S3) | Fabricio | 1.5d | F2 | DS-10 | Las 5 corren y devuelven filas |
+| DS-12 | Crear las 2 **vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Fabricio | 0.5d | F2 | DS-11 | `SHOW VIEWS` las lista; DDL guardado en `athena/` |
+| DS-13 | **E/R del catálogo** (`diagramas/er-catalogo-datalake.drawio`) con todas las tablas + claves de join | Fabricio / Alexander | 1d | F2 | DS-09 | Diagrama entregado |
+| DS-14 | Evidencias en `docs/evidencias/athena/` (capturas de las 5 queries + 2 vistas + `aws s3 ls` + Glue console) | Fabricio | 0.5d | F2 | DS-11..13 | Carpeta de evidencias completa |
+| DS-15 | Carga masiva real: ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Guillermo/Mariano/Edinson | 0.5d | F2 | Backend F2 (20k) | S3 con el 100% de los datos de las 3 BD |
 
 ---
 

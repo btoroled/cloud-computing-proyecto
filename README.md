@@ -83,18 +83,18 @@ Lee en este orden:
 
 | Rol | Lee y sigue | Mantiene / entrega en este repo |
 |---|---|---|
-| **Lead / Arquitecto** | todo | `arquitectura.md`, `diagramas/`, `aws-learner-lab-hallazgos.md`, `INDEX.md`, consolidación del `informe/` y `ppt/` |
-| **Dev A** (MS1) | `plan/backend.md` §4, `contratos/enums.md` | `docs/er/ms1-mysql-er.*`, evidencia de MS1 en `docs/evidencias/backend/`, su sección del informe |
-| **Dev B** (MS2) | `plan/backend.md` §5 | `docs/er/ms2-postgres-er.*`, evidencia de MS2, su sección del informe |
-| **Dev C** (MS3) | `plan/backend.md` §6 | `docs/er/ms3-mongo-schemas.md`, evidencia de MS3, su sección del informe |
-| **Dev D** (MS4/MS5 + Data Science) | `plan/backend.md` §7-§8, `plan/data-science.md` | `diagramas/er-catalogo-datalake.*` (o Dev E), `docs/evidencias/athena/`, secciones "Transformaciones" y "Data Science" del informe |
-| **Dev E** (Frontend) | `plan/frontend.md` | matriz de cobertura REST + capturas en `docs/evidencias/frontend/`, su sección del informe, página Swagger-UI agregada |
+| **Líder / Arquitecto** | todo | `arquitectura.md`, `diagramas/`, `aws-learner-lab-hallazgos.md`, `INDEX.md`, consolidación del `informe/` y `ppt/` |
+| **Guillermo** (MS1) | `plan/backend.md` §4, `contratos/enums.md` | `docs/er/ms1-mysql-er.*`, evidencia de MS1 en `docs/evidencias/backend/`, su sección del informe |
+| **Mariano** (MS2) | `plan/backend.md` §5 | `docs/er/ms2-postgres-er.*`, evidencia de MS2, su sección del informe |
+| **Edinson** (MS3) | `plan/backend.md` §6 | `docs/er/ms3-mongo-schemas.md`, evidencia de MS3, su sección del informe |
+| **Fabricio** (MS4/MS5 + Data Science) | `plan/backend.md` §7-§8, `plan/data-science.md` | `diagramas/er-catalogo-datalake.*` (o Alexander), `docs/evidencias/athena/`, secciones "Transformaciones" y "Data Science" del informe |
+| **Alexander** (Frontend) | `plan/frontend.md` | matriz de cobertura REST + capturas en `docs/evidencias/frontend/`, su sección del informe, página Swagger-UI agregada |
 
 ---
 
 ## Cómo contribuir a la documentación
 
-1. **Rama + PR.** No commitees directo a `main`. Rama `docs/<tema>`, PR con 1 revisión (normalmente el Lead).
+1. **Rama + PR.** No commitees directo a `main`. Rama `docs/<tema>`, PR con 1 revisión (normalmente Benja).
 2. **Español**, Markdown, líneas ≤ ~100 caracteres, tablas para listas de tareas/datos.
 3. **Dónde va cada cosa:**
    - Diagrama E/R de tu BD → `docs/er/` (PNG + fuente `.drawio`/`.dbml`). Actualiza la tabla de
@@ -105,7 +105,7 @@ Lee en este orden:
      [`docs/verificacion.md`](docs/verificacion.md).
    - URL de tu repo de código, una vez creado → [`INDEX.md`](INDEX.md).
    - Hallazgo sobre el Learner Lab (servicio disponible/no) → [`docs/aws-learner-lab-hallazgos.md`](docs/aws-learner-lab-hallazgos.md).
-   - Texto de tu sección del informe → `informe/` (o el doc colaborativo que indique el Lead).
+   - Texto de tu sección del informe → `informe/` (o el doc colaborativo que indique Benja).
 4. **No dupliques.** Si un dato ya está en `requerimientos.md` o `arquitectura.md`, enlázalo, no lo copies.
 5. **Contratos.** Cambiar un valor de [`docs/contratos/enums.md`](docs/contratos/enums.md) o un endpoint
    compartido se avisa en el standup y se hace por PR — rompe a otros servicios y a los joins de Athena.
@@ -124,7 +124,7 @@ Lee en este orden:
 | **F3** Entrega + exposición | Sáb 20 / Sem 7 | Informe consolidado a PDF, `ppt/` final, `INDEX.md` verificado, subida a Canvas |
 
 El **informe final no se escribe al final**: cada dev redacta su sección en F2 a medida que termina su
-componente y sube las evidencias. En F3 el Lead solo consolida y exporta.
+componente y sube las evidencias. En F3 Benja solo consolida y exporta.
 
 ---
 

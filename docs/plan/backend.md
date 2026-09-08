@@ -34,13 +34,13 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 | Componente | Responsable | Apoyo |
 |---|---|---|
-| Trabajo transversal (contratos, base Docker, CI, nginx, Swagger agregado) | Lead | Todos |
-| MS1 — Pasajeros / Tickets | Dev A | — |
-| MS2 — Vuelos / Operaciones | Dev B | — |
-| MS3 — Infraestructura / Incidencias | Dev C | — |
-| MS4 — Manifiesto de Vuelo | Dev D | — |
-| MS5 — Analítico | Dev D | Dev E (visualización) |
-| Integración, despliegue, red y seguridad | Lead | Dev B (tuning JVM) |
+| Trabajo transversal (contratos, base Docker, CI, nginx, Swagger agregado) | Benja | Todos |
+| MS1 — Pasajeros / Tickets | Guillermo | — |
+| MS2 — Vuelos / Operaciones | Mariano | — |
+| MS3 — Infraestructura / Incidencias | Edinson | — |
+| MS4 — Manifiesto de Vuelo | Fabricio | — |
+| MS5 — Analítico | Fabricio | Alexander (visualización) |
+| Integración, despliegue, red y seguridad | Benja | Mariano (tuning JVM) |
 
 ---
 
@@ -48,19 +48,19 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 | ID | Tarea | Resp. | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|---|
-| BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID | Lead + todos | 0.5d | F0 | — | Archivo aprobado en repo docs |
-| BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | Lead | 0.5d | F0 | — | 5 repos creados desde plantilla |
+| BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID | Benja + todos | 0.5d | F0 | — | Archivo aprobado en repo docs |
+| BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | Benja | 0.5d | F0 | — | 5 repos creados desde plantilla |
 | BE-TX-03 | `openapi.yaml` borrador por servicio (contract-first) | Cada dev | 0.5d c/u | F0 | BE-TX-01 | OpenAPI válido, revisado en standup Día 2 |
-| BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | Lead | 0.5d | F0 | — | Imágenes construyen y publican a GHCR |
-| BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | Lead | 0.5d | F0/F1 | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
-| BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | Lead | 0.5d | F1 | contratos | nginx enruta a los 5 servicios locales |
-| BE-TX-07 | Página Swagger-UI agregada (lista los 5 `openapi.json`) | Dev E | 0.5d | F2 | BE-TX-03 | `/docs` agregado muestra los 5 |
-| BE-TX-08 | Contrato de errores común (formato JSON de error, códigos 400/404/422/502) | Lead | 0.25d | F0 | — | Documentado en `contratos/` |
-| BE-TX-09 | Cliente HTTP compartido para llamadas entre servicios (timeout, reintento, propagación de error) | Dev D | 0.5d | F1 | BE-TX-08 | Usado por MS1, MS3, MS4 |
+| BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | Benja | 0.5d | F0 | — | Imágenes construyen y publican a GHCR |
+| BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | Benja | 0.5d | F0/F1 | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
+| BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | Benja | 0.5d | F1 | contratos | nginx enruta a los 5 servicios locales |
+| BE-TX-07 | Página Swagger-UI agregada (lista los 5 `openapi.json`) | Alexander | 0.5d | F2 | BE-TX-03 | `/docs` agregado muestra los 5 |
+| BE-TX-08 | Contrato de errores común (formato JSON de error, códigos 400/404/422/502) | Benja | 0.25d | F0 | — | Documentado en `contratos/` |
+| BE-TX-09 | Cliente HTTP compartido para llamadas entre servicios (timeout, reintento, propagación de error) | Fabricio | 0.5d | F1 | BE-TX-08 | Usado por MS1, MS3, MS4 |
 
 ---
 
-## 4. MS1 — Pasajeros / Tickets · Python + FastAPI + MySQL 8 (Dev A)
+## 4. MS1 — Pasajeros / Tickets · Python + FastAPI + MySQL 8 (Guillermo)
 
 | ID | Tarea | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|
@@ -78,7 +78,7 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 ---
 
-## 5. MS2 — Vuelos / Operaciones · Java + Spring Boot + PostgreSQL 16 (Dev B)
+## 5. MS2 — Vuelos / Operaciones · Java + Spring Boot + PostgreSQL 16 (Mariano)
 
 | ID | Tarea | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|
@@ -97,7 +97,7 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 ---
 
-## 6. MS3 — Infraestructura / Incidencias · Node.js + Express + MongoDB 7 (Dev C)
+## 6. MS3 — Infraestructura / Incidencias · Node.js + Express + MongoDB 7 (Edinson)
 
 | ID | Tarea | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|
@@ -114,7 +114,7 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 ---
 
-## 7. MS4 — Manifiesto de Vuelo · Python + FastAPI, sin BD (Dev D)
+## 7. MS4 — Manifiesto de Vuelo · Python + FastAPI, sin BD (Fabricio)
 
 | ID | Tarea | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|
@@ -127,7 +127,7 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 ---
 
-## 8. MS5 — Analítico · Python + FastAPI + boto3 → Athena (Dev D)
+## 8. MS5 — Analítico · Python + FastAPI + boto3 → Athena (Fabricio)
 
 > **Depende de Data Science** (bucket S3 + catálogo Glue con datos). Ver [plan Data Science](data-science.md).
 
@@ -145,7 +145,7 @@ mínimas (happy path + validación de error) · README con "levantar local" y "l
 
 ---
 
-## 9. Integración, despliegue, red y seguridad (Lead)
+## 9. Integración, despliegue, red y seguridad (Benja)
 
 | ID | Tarea | Est. | Fase | Depende de | DoD |
 |---|---|---|---|---|---|

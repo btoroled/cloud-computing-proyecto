@@ -12,6 +12,7 @@ días-persona · fase · dependencias · DoD), mapa a hitos, camino crítico y r
 | Diagrama de arquitectura de solución | 1 pt | [`diagrama-arquitectura.md`](diagrama-arquitectura.md) | ✅ |
 | Exposiciones (virtual ACL + presencial) + Informe/PPT | 1 + 3 pts | [`exposiciones-e-informe.md`](exposiciones-e-informe.md) | ✅ |
 | **Distribución del trabajo** (consolidado: RACI, carga por persona, dependencias) | — | [`distribucion-trabajo.md`](distribucion-trabajo.md) | ✅ |
+| **Tareas por persona** (checklist personal de cada integrante) | — | [`personas/`](personas/README.md) | ✅ |
 
 Fases: **F0** Setup/contratos (Mié 2 – Vie 4) · **F1** Núcleo + deploy v1 (Sáb 6 – Sáb 12, Hito 1) ·
 **F2** Completar + endurecer (Sáb 13 – Vie 19) · **F3** Entrega + exposición (Sáb 20 / Semana 7).
@@ -19,6 +20,7 @@ Fases: **F0** Setup/contratos (Mié 2 – Vie 4) · **F1** Núcleo + deploy v1 (
 ## Cómo leer estos planes
 
 1. Empieza por [`distribucion-trabajo.md`](distribucion-trabajo.md) para ver el reparto global y tu carga.
-2. Ve al plan de tu sección para el detalle de tareas y su DoD.
-3. El [plan general §4](../plan-de-trabajo.md#4-cronograma-mié-2-set--dom-20-set-presencial-semana-7) tiene
+2. Abre tu archivo en [`personas/`](personas/README.md) para tu checklist personal (todas tus tareas, por fase).
+3. Ve al plan de tu sección para el detalle de tareas y su DoD.
+4. El [plan general §4](../plan-de-trabajo.md#4-cronograma-mié-2-set--dom-20-set-presencial-semana-7) tiene
    el cronograma día a día que ata todas las secciones.
