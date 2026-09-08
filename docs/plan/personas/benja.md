@@ -28,13 +28,13 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
-| ☐ | BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | 0.5d | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
-| ☐ | BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | 0.5d | contratos | nginx enruta a los 5 servicios locales |
-| ☐ | BE-INT-03 | VM-DB: `compose` con `mysql:8` + `postgres:16` + `mongo:7` + volúmenes | 0.5d | BE-INT-02 | Los 3 motores `Up`; solo VM-PROD conecta |
-| ☐ | BE-INT-04 | VM-PROD ×2: `compose` con nginx + MS1..MS5 (pull de GHCR) | 1d | BE-TX-06, imágenes | 5 servicios `Up` en ambas VMs |
+| 🟡 | BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | 0.5d | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
+| 🟡 | BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | 0.5d | contratos | nginx enruta a los 5 servicios locales |
+| 🟡 | BE-INT-03 | VM-DB: `compose` con `mysql:8` + `postgres:16` + `mongo:7` + volúmenes | 0.5d | BE-INT-02 | Los 3 motores `Up`; solo VM-PROD conecta |
+| 🟡 | BE-INT-04 | VM-PROD ×2: `compose` con nginx + MS1..MS5 (pull de GHCR) | 1d | BE-TX-06, imágenes | 5 servicios `Up` en ambas VMs |
 | ☐ | BE-INT-05 | ALB interno (o NLB) → target de las 2 VM-PROD:80 | 0.5d | BE-INT-04 | Balancea entre las 2 VMs |
 | ☐ | BE-INT-06 | API Gateway HTTP API + VPC Link → ALB; ruta `/{proxy+}` | 1d | BE-INT-05, Learner Lab | URL pública HTTPS responde `/api/*/health` |
-| ☐ | BE-INT-07 | `RUNBOOK.md` de reinicio tras corte (< 15 min) + script de dumps a S3 | 0.5d | BE-INT-03 | Reinicio cronometrado documentado |
+| 🟡 | BE-INT-07 | `RUNBOOK.md` de reinicio tras corte (< 15 min) + script de dumps a S3 | 0.5d | BE-INT-03 | Reinicio cronometrado documentado |
 | ☐ | DS-04 | Bucket S3 + estructura de prefijos `raw/ms{1,2,3}/` + política `LabRole` | 0.25d | Learner Lab | `aws s3 ls` muestra el bucket |
 | ☐ | DS-05 | VM-INGESTA (EC2 `t3.small`) + `compose` de los 3 contenedores + acceso lectura a VM-DB | 0.5d | BE-INT-02 | `compose` levanta; alcanza la VM-DB |
 | ☐ | DA-02 | Diagrama v1 tras validar Learner Lab (ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no) | 0.5d | hallazgos Learner Lab | Refleja las decisiones tomadas |
@@ -122,7 +122,17 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
   (dueño por entidad) consolidando el plan §3.
 - **Pendiente:** revisión y OK del equipo en el standup.
 
-### 🟡 BE-TX-02 / BE-TX-04 / BE-TX-05 — plantilla + imágenes base + CI
+### 🟡 BE-TX-02 / BE-TX-04 / BE-TX-05 / BE-TX-06 — plantilla + imágenes base + CI + nginx (2026-09-08)
 
-- En progreso: `aeropuerto-infra-deploy/plantilla/` (`.editorconfig`, `.env.example`, README base,
-  Dockerfiles Py/Java/Node con healthcheck, workflow `build-push-ghcr.yml`).
+- `aeropuerto-infra-deploy/plantilla/`: `.editorconfig`, `.env.example`, `.gitignore`, `README.servicio.md`,
+  `docker/Dockerfile.{python,java,node}` (healthcheck + no-root; MS2 con `-Xmx256m`),
+  `github/workflows/build-push-ghcr.yml` (push de tag `vX.Y` → `ghcr.io/cloud-mla/<repo>`).
+- `aeropuerto-infra-deploy/nginx/nginx.conf`: reverse proxy por path (BE-TX-06).
+- **Pendiente:** que cada dev copie la plantilla a su repo y que corra el primer tag para publicar imagen.
+  PR: `Cloud-MLA/aeropuerto-infra-deploy#1`.
+
+### 🟡 BE-INT-03 / BE-INT-04 — compose de VM-DB y VM-PROD (2026-09-08)
+
+- `aeropuerto-infra-deploy/compose/vm-db/` (mysql 8 + postgres 16 + mongo 7, healthchecks, volúmenes).
+- `aeropuerto-infra-deploy/compose/vm-prod/` (nginx + MS1..MS5 desde GHCR, `.env.example`).
+- **Pendiente:** desplegarlos en las EC2 cuando existan (depende de BE-INT-02) y de que haya imágenes en GHCR.
