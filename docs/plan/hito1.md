@@ -20,6 +20,7 @@ Documentos base: [plan general §5](../plan-de-trabajo.md#5-checklist-hito-1-ava
 | **Backend** | Microservicios implementados parcialmente, **≥1 BD conectada** |
 | **Frontend** | Página inicial en **AWS Amplify** que consume **≥1 microservicio con un par de métodos REST** |
 | **Data Science** | **VM de ingesta configurada** + **bucket S3 creado** + **≥1 contenedor de ingesta funcionando con datos cargados en S3** |
+| **Diagrama de arquitectura** | Diagrama de la solución en **draw.io** (`.drawio` + PNG) con los servicios AWS de esta entrega. Se entrega en Hito 1 con la arquitectura **planificada**; en Hito 2 se ajusta a la infra final ([hito2 §5](hito2.md#5-diagrama-de-arquitectura-de-solución-benja--1-pt)) |
 
 ## 2. Estrategia: corte vertical sobre MS3
 
@@ -94,7 +95,18 @@ Convención: **Est.** en horas. Bloque = sesión de trabajo.
 | H1-D3 | SSM a `VM-INGESTA` → `docker compose up` del contenedor → verificar objetos en S3 | 0.75h | H1-A4, H1-D2 | `aws s3 ls s3://mla-aeropuerto-lake/raw/ms3/ --recursive` muestra datos |
 | H1-D4 | Captura: `aws s3 ls --recursive` con objetos + tamaño | 0.25h | H1-D3 | Evidencia en `docs/evidencias/data-science/` |
 
-### 3.6 Sáb 12 AM — Integración (Benja coordina)
+### 3.6 Track E — Diagrama de arquitectura en draw.io (Benja)
+
+No depende de que AWS esté arriba: es la arquitectura **planificada** del Hito 1. Se puede hacer el
+jueves noche o el viernes en paralelo. Base: el boceto Mermaid v0 en `diagramas/arquitectura-solucion.md`.
+
+| ID | Tarea | Est. | Depende de | DoD |
+|---|---|---|---|---|
+| H1-E1 | Diagrama en **draw.io** (diagrams.net) con lo que entra al Hito 1: VPC + subredes (2 pub / 2 priv) + SG, IGW/NAT, endpoint S3, `VM-PROD-1` (pública) con nginx + MS3, `VM-DB` (privada) con MySQL/Postgres/Mongo, `VM-INGESTA` (privada), **API Gateway HTTP API** → VM-PROD-1, **S3** `mla-aeropuerto-lake`, **Amplify** (frontend). Marcar en gris/punteado lo que llega en Hito 2 (ALB, VPC Link, VM-PROD-2, Glue, Athena, MS1/2/4/5) | 1.5h | — | Diagrama legible con iconos oficiales de AWS |
+| H1-E2 | Exportar a **`diagramas/arquitectura-solucion.drawio`** (editable) + **`diagramas/arquitectura-solucion.png`**; commit + PR a `main` de `cloud-computing-proyecto` | 0.25h | H1-E1 | Ambos archivos versionados; PR mergeado |
+| H1-E3 | Incluir el PNG en las slides de la exposición virtual ACL y en la sección de arquitectura del avance | 0.1h | H1-E2 | Slide con el diagrama |
+
+### 3.7 Sáb 12 AM — Integración (Benja coordina)
 
 | ID | Tarea | Est. | DoD |
 |---|---|---|---|
@@ -115,9 +127,10 @@ Convención: **Est.** en horas. Bloque = sesión de trabajo.
 - [ ] URL pública de **Amplify** abierta, página de Infraestructura con datos reales + Network tab
 - [ ] Consola S3 con `raw/ms3/…` poblado (`aws s3 ls --recursive`)
 - [ ] Consola AWS: VPC resource map, lista de EC2 (sin IP pública en VM-DB/VM-INGESTA), bucket con prefijos
+- [ ] **Diagrama de arquitectura en draw.io**: `diagramas/arquitectura-solucion.drawio` + `.png` en el repo (H1-E2)
 - [ ] PRs mergeados en `ms3-infraestructura-api` y `aeropuerto-frontend`
 - [ ] `docs/aws-learner-lab-hallazgos.md` actualizado con estados ✅/⚠️ reales
-- [ ] Slides de avance + guion de demo corta para la exposición virtual ACL
+- [ ] Slides de avance (con el diagrama) + guion de demo corta para la exposición virtual ACL
 
 ---
 
@@ -135,6 +148,9 @@ H1-A1..A5 (VPC, SG, S3, EC2, VM-DB)
 
 **Bloqueante #1:** AWS base (H1-A1..A5) — sin esto no avanza ni Backend deploy ni Data Science.
 **Bloqueante #2:** API Gateway con HTTPS (H1-A8) — el frontend en Amplify (HTTPS) lo necesita para evitar *mixed content*.
+
+El **diagrama draw.io (Track E)** va **fuera del camino crítico**: es la arquitectura planificada, no
+necesita infra desplegada. Hacerlo el jueves noche o el viernes en paralelo.
 
 ---
 
@@ -161,8 +177,9 @@ H1-A1..A5 (VPC, SG, S3, EC2, VM-DB)
 ## 8. Checklist personal — Benja
 
 - [ ] Jue 10: kickoff + cerrar PR #5 + fijar decisión de exposición (API Gateway directo)
+- [ ] Jue 10 noche / Vie 11 (en paralelo): **diagrama draw.io** H1-E1..E3
 - [ ] Vie 11 AM (sesión Lab #1): H1-A1..A6 (VPC, SG, S3, 3×EC2, VM-DB con Mongo, publicar IPs)
 - [ ] Vie 11 PM (sesión Lab #2): H1-A7..A9 (nginx+ms3 en VM-PROD-1, API Gateway, entregar URL)
 - [ ] Vie 11 noche: H1-A10 (backups + stop)
 - [ ] Sáb 12 AM: H1-INT1..INT6 (reinicio, integración E2E, evidencias)
-- [ ] Sáb 12: armar paquete de entrega + actualizar `hallazgos.md` + slides ACL
+- [ ] Sáb 12: armar paquete de entrega + actualizar `hallazgos.md` + slides ACL (con el diagrama)

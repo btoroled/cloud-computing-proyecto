@@ -146,10 +146,13 @@ Hecho en Hito 1: bucket S3 + VM-INGESTA + `ingesta-ms3` con datos en S3. Falta:
 
 ## 5. Diagrama de arquitectura de solución (Benja) · 1 pt
 
+Ya se entregó la **v1 (arquitectura planificada)** en el Hito 1 ([hito1 §3.6](hito1.md#36-track-e--diagrama-de-arquitectura-en-drawio-benja)):
+`diagramas/arquitectura-solucion.drawio` + `.png`. En Hito 2 se **actualiza a la infra final**.
+
 | Tarea | DoD |
 |---|---|
-| Diagrama `draw.io` con **todos** los servicios AWS usados: VPC/subredes/SG, NAT/IGW, endpoint S3, 4 EC2 (VM-PROD ×2, VM-DB, VM-INGESTA), ALB interno, API Gateway + VPC Link, S3, Glue, Athena, Amplify; flujos de request y de datos | Diagrama en `diagramas/`, exportado a PNG, referenciado en el informe |
-| Consolidar con el boceto Mermaid v0 ya existente (`diagramas/arquitectura-solucion.md`) | Versión final coincide con la infra real desplegada |
+| Actualizar el `.drawio` para que refleje **todo** lo desplegado: VPC/subredes/SG, NAT/IGW, endpoint S3, 4 EC2 (VM-PROD ×2, VM-DB, VM-INGESTA), **ALB interno**, **API Gateway + VPC Link**, S3, Glue, Athena, Amplify, los 5 microservicios; flujos de request y de datos | Diagrama en `diagramas/`, PNG re-exportado, referenciado en el informe |
+| Quitar el marcado gris/punteado de "pendiente Hito 2" que traía la v1; versión final **coincide con la infra real desplegada** y con el boceto Mermaid `diagramas/arquitectura-solucion.md` | Diagrama revisado contra la consola AWS |
 
 ---
 
