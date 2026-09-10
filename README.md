@@ -48,7 +48,8 @@ docs/
     exposiciones-e-informe.md . 3+1 pts — ACL, informe, PPT, presencial
 
   contratos/
-    enums.md ............ diccionario de enums compartido por los 3 servicios con BD (OBLIGATORIO respetar)
+    enums.md ............ diccionario de enums + rangos de ID compartidos (OBLIGATORIO respetar)
+    errores.md ......... formato único de respuesta de error de las 5 APIs (códigos y catálogo)
 
   er/                     modelos de datos por microservicio (los suben los dueños de cada MS)
     README.md ........... qué archivo debe dejar cada quien
