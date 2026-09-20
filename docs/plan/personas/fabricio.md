@@ -33,13 +33,13 @@ Fuentes: [backend.md](../backend.md) §7, §8, §3 · [data-science.md](../data-
 
 ## F2 — Completar, 20k, endurecer (Sáb 13 – Vie 19)
 
-### MS4 — ✅ CÓDIGO CERRADO (tag `v1.0` pendiente tras merge)
+### MS4 — ✅ CERRADO (tag `v1.0` publicado en GHCR)
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
 | ☑ | MS4-03 | `GET /manifiesto/{vuelo_id}/pasajeros` y `/resumen` (conteos: pax, kg equipaje, incidencias abiertas) | 0.5d | MS4-02 | ✅ Subrecursos coherentes, tests verdes |
 | ☑ | MS4-04 | Manejo de dependencia caída (timeout / 502) → respuesta parcial con `warnings[]` | 0.5d | MS4-02 | ✅ Si MS3 cae, devuelve resto + warning; verificado en AWS (probado con `curl` — MS4 devolvió `warnings: ["MS1/tickets: 404..."]` al bajar MS1) |
 | ☑ | MS4-05 | Swagger + ejemplos + pruebas con mocks de MS1/MS2/MS3 | 0.5d | MS4-02 | ✅ `/docs` con ejemplos completo/degraded/404; 7 tests con `httpx.MockTransport` |
-| ⏳ | MS4-06 | README + tag `v1.0` → GHCR | 0.25d | BE-TX-05 | 🟡 README v1.0 pusheado (PR `chore/v1-readme-ejemplos`). **Falta:** tras merge, `git tag v1.0 && git push origin v1.0` dispara GHCR |
+| ☑ | MS4-06 | README + tag `v1.0` → GHCR | 0.25d | BE-TX-05 | ✅ Tag `v1.0` publicado (`refs/tags/v1.0` en remoto → workflow GHCR dispara `ghcr.io/cloud-mla/ms4-manifiesto-api:v1.0`) |
 
 ### Data Science
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
@@ -51,7 +51,7 @@ Fuentes: [backend.md](../backend.md) §7, §8, §3 · [data-science.md](../data-
 | ☐ | DS-13 | **E/R del catálogo** (`diagramas/er-catalogo-datalake.drawio`) con todas las tablas + claves de join (con Alexander) | 1d | DS-09 | ⏳ Borrador Mermaid en preparación para Alexander |
 | ☐ | DS-14 | Evidencias en `docs/evidencias/athena/` (capturas de las 5 queries + 2 vistas + `aws s3 ls` + Glue console) | 0.5d | DS-11..13 | 🔴 Bloqueado por DS-11/12 |
 
-### MS5 — ✅ CÓDIGO CERRADO (tag `v1.0` pendiente tras merge)
+### MS5 — ✅ CERRADO (tag `v1.0` publicado en GHCR)
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
 | ☑ | MS5-02 | Capa de ejecución Athena (lanzar query, *poll*, leer resultados, cachear por TTL) | 0.75d | DS catálogo | ✅ `AthenaClient` boto3 con start → poll (500ms, timeout 60s) → get_results paginado + cache SHA-256 con TTL. Contra AWS real funciona sin cambios (probado con mocks) |
@@ -61,7 +61,7 @@ Fuentes: [backend.md](../backend.md) §7, §8, §3 · [data-science.md](../data-
 | ☑ | MS5-06 | `GET /analitica/recaudacion-tuua-por-categoria` (lee `vw_recaudacion_tuua`) | 0.5d | MS5-02, DS vista 1 | ✅ Endpoint funcional; consumirá la vista tras DS-12 |
 | ☑ | MS5-07 | `GET /analitica/vuelos-hora-punta-retrasados` (lee `vw_retrasos_hora_punta`) | 0.5d | MS5-02, DS vista 2 | ✅ Endpoint funcional; consumirá la vista tras DS-12 |
 | ☑ | MS5-08 | Swagger + pruebas (mock del cliente Athena) | 0.5d | MS5-03..07 | ✅ `/docs` con ejemplos; 16 tests con `MagicMock` boto3 |
-| ⏳ | MS5-09 | README + tag `v1.0` → GHCR | 0.25d | BE-TX-05 | 🟡 README v1.0 pusheado (PR `feature/ms5-athena-real`). **Falta:** tras merge, `git tag v1.0 && git push origin v1.0` |
+| ☑ | MS5-09 | README + tag `v1.0` → GHCR | 0.25d | BE-TX-05 | ✅ Tag `v1.0` publicado → `ghcr.io/cloud-mla/ms5-analitica-api:v1.0` |
 
 ### Frontend (apoyo)
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
@@ -94,19 +94,15 @@ Fuentes: [backend.md](../backend.md) §7, §8, §3 · [data-science.md](../data-
 - **R9** Crawlers de Glue infieren tipos mal → `CREATE TABLE` explícito o Parquet; validar con `SELECT ... LIMIT 10`.
 - **R5** (con Guillermo/Mariano/Edinson) IDs que no cruzan → ✅ mitigado con `seeds/` orden MS2→MS1→MS3 con `SEED` fijo; DS-03 valida joins en local.
 
-## Nota de estado (2026-09-19)
+## Nota de estado (2026-09-20)
 
-**Código listo y pusheado como PR (esperando merge):**
-- `ms4-manifiesto-api` — `chore/v1-readme-ejemplos` (README v1.0 + ejemplos OpenAPI)
-- `ms5-analitica-api` — `feature/ms5-athena-real` (AthenaClient real + 5 endpoints Q1-Q5 + README v1.0 + 16 tests)
+**Publicado / listo para consumir:**
+- `ghcr.io/cloud-mla/ms4-manifiesto-api:v1.0` — imagen en GHCR (tag `v1.0` en repo).
+- `ghcr.io/cloud-mla/ms5-analitica-api:v1.0` — imagen en GHCR (tag `v1.0` en repo).
+  → Benja puede hacer `docker compose pull && up` en las VM-PROD para desplegar la última.
+
+**Data Science — PR abierto esperando merge:**
 - `aeropuerto-data-science` — `feature/ds-11-athena-sql` (5 SQL Athena + 2 vistas + `SETUP_ATHENA.md`)
-
-**Post-merge (tú, mismo día):**
-```bash
-cd ms4-manifiesto-api && git tag v1.0 && git push origin v1.0
-cd ../ms5-analitica-api && git tag v1.0 && git push origin v1.0
-```
-→ dispara `build-push-ghcr.yml` → publica `ghcr.io/cloud-mla/{ms4-manifiesto-api,ms5-analitica-api}:v1.0` y `:latest`.
 
 **Bloqueado por AWS (Benja):**
 - DS-09 (Glue crawlers) y DS-10 (ajuste de schemas) — necesitan `Start Lab` + acceso al S3 con datos de ingesta ya cargados.
