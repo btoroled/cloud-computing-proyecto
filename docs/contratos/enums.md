@@ -21,6 +21,25 @@ Cualquier cambio se comunica al equipo en el standup y se versiona aquí.
 | `clase_aeronave` (OACI) | `A` · `B` · `C` · `D` · `E` · `F` | MS2 (`aeronave.clase`, `manga.clase_max` en MS3) |
 | `frecuencia_radar` | `Banda L` · `Banda S` · `Banda C` · `Banda X` | MS3 (`recursos.radar.frecuencia`) |
 
+## Rangos de ID (integridad entre servicios)
+
+La data ficticia se genera en orden **MS2 → MS1 → MS3** con un `SEED` fijo (en
+`aeropuerto-data-science/seeds/`), para que las FK suaves apunten a registros existentes y los `JOIN`
+de Athena no salgan vacíos. Detalle en [plan general §3](../plan-de-trabajo.md#3-datos-de-prueba-integridad-entre-servicios).
+
+| Entidad | Rango de ID | Dueño |
+|---|---|---|
+| `vuelo.id` | 1 – 25 000 | MS2 |
+| `aerolinea.ruc` | RUC de 11 dígitos generado | MS2 |
+| `aeronave.placa` | `OB-####` | MS2 |
+| `persona.id` / `pasajero.id` | 100 000 – 160 000 | MS1 |
+| `ticket.id` | 1 – 60 000 | MS1 |
+| `recurso.id` | 1 – 500 | MS3 |
+| `incidencia.id` | 1 – 30 000 (referida a `vuelo_id` ∈ [1, 25 000] y/o `recurso.id` ∈ [1, 500]) | MS3 |
+
+Tablas objetivo para el volumen ≥20 000: `ticket` / `equipaje` (MySQL), `vuelo` / `asiento`
+(PostgreSQL), `incidencias` (MongoDB).
+
 ## Notas
 
 - **Sin tildes** en los valores de enum (`Critica`, `Transito`, `Inundacion`) para evitar problemas de

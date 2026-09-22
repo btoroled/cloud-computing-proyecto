@@ -13,9 +13,15 @@ días-persona · fase · dependencias · DoD), mapa a hitos, camino crítico y r
 | Exposiciones (virtual ACL + presencial) + Informe/PPT | 1 + 3 pts | [`exposiciones-e-informe.md`](exposiciones-e-informe.md) | ✅ |
 | **Distribución del trabajo** (consolidado: RACI, carga por persona, dependencias) | — | [`distribucion-trabajo.md`](distribucion-trabajo.md) | ✅ |
 | **Tareas por persona** (checklist personal de cada integrante) | — | [`personas/`](personas/README.md) | ✅ |
+| **Hito 1 — todo lo urgente** (corte vertical MS3, paso a paso, entrega Sáb 12) | 3 pts (ACL) | [`hito1.md`](hito1.md) | ✅ |
+| **Hito 2 — todo lo faltante** (backend completo, 4 vistas, Glue/Athena, informe, entrega Dom 20) | resto | [`hito2.md`](hito2.md) | ✅ |
 
 Fases: **F0** Setup/contratos (Mié 2 – Vie 4) · **F1** Núcleo + deploy v1 (Sáb 6 – Sáb 12, Hito 1) ·
 **F2** Completar + endurecer (Sáb 13 – Vie 19) · **F3** Entrega + exposición (Sáb 20 / Semana 7).
+
+Los planes por sección (`backend.md`, `frontend.md`, `data-science.md`) tienen el detalle completo con
+DoD; [`hito1.md`](hito1.md) y [`hito2.md`](hito2.md) son la vista **consolidada y priorizada por
+entrega** — qué toca ahora y qué queda pendiente.
 
 ## Cómo leer estos planes
 

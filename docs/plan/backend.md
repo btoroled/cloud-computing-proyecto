@@ -2,7 +2,7 @@
 
 **Rúbrica:** 7 pts · **Hito 1:** avance ≥50% · **Hito 2:** completo.
 Documentos base: [requerimientos §2–§5](../requerimientos.md) · [arquitectura](../arquitectura.md) ·
-[enums](../contratos/enums.md) · [plan general](../plan-de-trabajo.md).
+[enums](../contratos/enums.md) · [errores](../contratos/errores.md) · [plan general](../plan-de-trabajo.md).
 
 Convención de estimación: **d** = días-persona aproximados (jornada de estudiante ≈ 3–4 h).
 Fases: **F0** = Setup/contratos (Mié 2 – Vie 4) · **F1** = Núcleo + deploy v1 (Sáb 6 – Sáb 12, Hito 1) ·

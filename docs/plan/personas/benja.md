@@ -16,31 +16,31 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 |---|---|---|---|---|---|
 | ✅ | — | Crear la organización GitHub + los 9 repos (README + LICENSE + plantilla) e invitar al equipo | 0.5d | — | 9 repos creados; equipo con acceso |
 | ☐ | — | Validar Learner Lab en orden EC2+VPC → S3 → Glue+Athena → API Gateway+VPC Link → Amplify y escribir [`aws-learner-lab-hallazgos.md`](../../aws-learner-lab-hallazgos.md) | 0.5d | Learner Lab | Doc de hallazgos con qué hay y qué no |
-| ☐ | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
-| ☐ | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
-| ☐ | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | Imágenes construyen y publican a GHCR |
-| ☐ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
+| 🟡 | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
+| ✅ | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
+| 🟡 | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | Imágenes construyen y publican a GHCR |
+| ✅ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
 | ☐ | BE-INT-01 | VPC + subredes privadas + IGW/NAT + Security Groups | 1d | Learner Lab OK | SGs mínimos aplicados |
 | ☐ | BE-INT-02 | 3 EC2: VM-PROD-1, VM-PROD-2, VM-DB + acceso por SSM (sin puerto 22 público) | 0.5d | BE-INT-01 | Acceso por SSM funcionando |
-| ☐ | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | PNG compartido en el repo docs |
+| 🟡 | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | PNG compartido en el repo docs |
 
 ## F1 — Núcleo + deploy v1 (Sáb 6 – Sáb 12 · Hito 1)
 
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
-| ☐ | BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | 0.5d | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
-| ☐ | BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | 0.5d | contratos | nginx enruta a los 5 servicios locales |
-| ☐ | BE-INT-03 | VM-DB: `compose` con `mysql:8` + `postgres:16` + `mongo:7` + volúmenes | 0.5d | BE-INT-02 | Los 3 motores `Up`; solo VM-PROD conecta |
-| ☐ | BE-INT-04 | VM-PROD ×2: `compose` con nginx + MS1..MS5 (pull de GHCR) | 1d | BE-TX-06, imágenes | 5 servicios `Up` en ambas VMs |
+| 🟡 | BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | 0.5d | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
+| 🟡 | BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | 0.5d | contratos | nginx enruta a los 5 servicios locales |
+| 🟡 | BE-INT-03 | VM-DB: `compose` con `mysql:8` + `postgres:16` + `mongo:7` + volúmenes | 0.5d | BE-INT-02 | Los 3 motores `Up`; solo VM-PROD conecta |
+| 🟡 | BE-INT-04 | VM-PROD ×2: `compose` con nginx + MS1..MS5 (pull de GHCR) | 1d | BE-TX-06, imágenes | 5 servicios `Up` en ambas VMs |
 | ☐ | BE-INT-05 | ALB interno (o NLB) → target de las 2 VM-PROD:80 | 0.5d | BE-INT-04 | Balancea entre las 2 VMs |
 | ☐ | BE-INT-06 | API Gateway HTTP API + VPC Link → ALB; ruta `/{proxy+}` | 1d | BE-INT-05, Learner Lab | URL pública HTTPS responde `/api/*/health` |
-| ☐ | BE-INT-07 | `RUNBOOK.md` de reinicio tras corte (< 15 min) + script de dumps a S3 | 0.5d | BE-INT-03 | Reinicio cronometrado documentado |
+| 🟡 | BE-INT-07 | `RUNBOOK.md` de reinicio tras corte (< 15 min) + script de dumps a S3 | 0.5d | BE-INT-03 | Reinicio cronometrado documentado |
 | ☐ | DS-04 | Bucket S3 + estructura de prefijos `raw/ms{1,2,3}/` + política `LabRole` | 0.25d | Learner Lab | `aws s3 ls` muestra el bucket |
 | ☐ | DS-05 | VM-INGESTA (EC2 `t3.small`) + `compose` de los 3 contenedores + acceso lectura a VM-DB | 0.5d | BE-INT-02 | `compose` levanta; alcanza la VM-DB |
 | ☐ | DA-02 | Diagrama v1 tras validar Learner Lab (ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no) | 0.5d | hallazgos Learner Lab | Refleja las decisiones tomadas |
-| ☐ | EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones + placeholders de evidencia | 0.5d | — | Plantilla compartida |
+| 🟡 | EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones + placeholders de evidencia | 0.5d | — | Plantilla compartida |
 | ☐ | EX-02 | Slides de avance Hito 1 (1–2 por integrante) + consolidación | 1d | avance F1 | PPT de avance listo |
-| ☐ | EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | 0.5d | deploy v1 | Demo de ≤10 min ensayada |
+| 🟡 | EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | 0.5d | deploy v1 | Demo de ≤10 min ensayada |
 | ☐ | EX-04 | **Exposición virtual con ACL** (con todo el equipo) | 0.5d | EX-02/03 | Realizada; feedback del ACL anotado |
 
 ## F2 — Completar, 20k, endurecer (Sáb 13 – Vie 19)
@@ -103,5 +103,63 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
     `aeropuerto-infra-deploy`.
 - **Pendiente menor:** `aeropuerto-frontend` no tiene archivo `LICENSE` (los demás sí, MIT) — agregarlo
   por PR normal (el intento por API quedó bloqueado).
-- **Siguiente:** la "plantilla base" común de repo es **BE-TX-02** (tarea aparte); los repos nuevos
-  quedaron con README mínimo a la espera de esa plantilla.
+
+### 🟡 Validar Learner Lab (2026-09-08)
+
+- `docs/aws-learner-lab-hallazgos.md` convertido en checklist accionable (6 bloques con "cómo probar" +
+  columnas de resultado).
+- `aeropuerto-infra-deploy/RUNBOOK.md` v1: provisión inicial paso a paso, reinicio tras corte, limpieza.
+- **Pendiente:** ejecutar la validación en la consola del Learner Lab y rellenar la tabla.
+
+### ✅ BE-TX-08 — Contrato de errores (2026-09-08)
+
+- `docs/contratos/errores.md`: formato JSON único, mapa de códigos HTTP (400/404/409/422/502/503/500),
+  catálogo de `error.code` (comunes + de dominio), propagación con `X-Request-Id`, notas por stack.
+
+### 🟡 BE-TX-01 — enums + rangos de ID (2026-09-08)
+
+- `docs/contratos/enums.md` ya tenía el diccionario de enums; le agregué la sección **Rangos de ID**
+  (dueño por entidad) consolidando el plan §3.
+- **Pendiente:** revisión y OK del equipo en el standup.
+
+### 🟡 BE-TX-02 / BE-TX-04 / BE-TX-05 / BE-TX-06 — plantilla + imágenes base + CI + nginx (2026-09-08)
+
+- `aeropuerto-infra-deploy/plantilla/`: `.editorconfig`, `.env.example`, `.gitignore`, `README.servicio.md`,
+  `docker/Dockerfile.{python,java,node}` (healthcheck + no-root; MS2 con `-Xmx256m`),
+  `github/workflows/build-push-ghcr.yml` (push de tag `vX.Y` → `ghcr.io/cloud-mla/<repo>`).
+- `aeropuerto-infra-deploy/nginx/nginx.conf`: reverse proxy por path (BE-TX-06).
+- PR: `Cloud-MLA/aeropuerto-infra-deploy#1`.
+
+### ✅ BE-TX-02 — archivos base aplicados a los repos de MS (2026-09-08)
+
+- `ms1` / `ms2` / `ms4` / `ms5`: PR `chore/plantilla-base` con `.editorconfig`, `.gitignore` (ms1/ms2),
+  `.env.example` por stack, `.github/workflows/build-push-ghcr.yml`, README con convenciones + checklist
+  de scaffold. **Sin código de app** (eso es `MSx-01` de cada dev).
+- `ms3` mantiene su propio scaffold (Edinson ya avanzó MS3-01).
+- **Pendiente:** que cada dev haga su scaffold (`MSx-01`) y corra el primer `git tag` para publicar imagen.
+
+### 🟡 BE-INT-03 / BE-INT-04 — compose de VM-DB y VM-PROD (2026-09-08)
+
+- `aeropuerto-infra-deploy/compose/vm-db/` (mysql 8 + postgres 16 + mongo 7, healthchecks, volúmenes).
+- `aeropuerto-infra-deploy/compose/vm-prod/` (nginx + MS1..MS5 desde GHCR, `.env.example`).
+- **Pendiente:** desplegarlos en las EC2 cuando existan (depende de BE-INT-02) y de que haya imágenes en GHCR.
+
+### 🟡 DA-01 — boceto v0 del diagrama (2026-09-08)
+
+- `diagramas/arquitectura-solucion.md` — diagrama Mermaid con la topología completa (VPC, subredes,
+  API Gateway+VPC Link, ALB, VM-PROD/DB/INGESTA, S3/Glue/Athena, Amplify, SSM/CloudWatch, GHCR).
+- **Pendiente:** `.drawio` + PNG con nombres reales para el informe (DA-03, F2).
+- Renderiza directo en GitHub; sirve para la exposición virtual del Hito 1.
+
+### 🟡 EX-01 / EX-03 — plantilla del informe + guion de demo (2026-09-08)
+
+- `informe/plantilla-informe.md` — 9 secciones con responsables, placeholders de evidencia `[E-n]` y
+  anexo de trazabilidad rúbrica → evidencia.
+- `informe/guion-demo.md` — guion para Hito 1 (≤10 min) y presencial (~15 min) + checklist previo.
+- **Pendiente:** llenar las secciones en F2 (EX-06) y ensayar la demo (EX-11).
+
+### 🟡 BE-INT-07 / BE-INT-08 — scripts de operación (2026-09-08)
+
+- `aeropuerto-infra-deploy/scripts/`: `user-data-*.sh`, `provision.sh` (aws-cli), `smoke-e2e.sh`
+  (prueba de humo E2E), `backup-db.sh` / `restore-db.sh`.
+- **Pendiente:** correr `smoke-e2e.sh` contra la URL real (depende de BE-INT-06).
