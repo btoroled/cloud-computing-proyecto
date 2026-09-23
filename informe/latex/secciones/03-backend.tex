@@ -38,12 +38,88 @@ llamada saliente \texttt{MS1$\to$MS2}, 23-Set-2026):
 \texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}.}
 
 \subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
-\pendiente{Documentar el modelo Flyway, la máquina de estados de
-\texttt{vuelo.estado}, el endpoint \texttt{GET /vuelos/\{id\}/exists}
-usado por MS1 y MS3, la tripulación N-M y el seed de 20\,000 vuelos.
-Adjuntar la evidencia del \texttt{COUNT(*)}. Ya recolectada: 20\,500 vuelos +
-21\,000 asientos contra la VM-DB de producción, 23-Set-2026 --
-\texttt{docs/evidencias/backend/ms2-count-2026-09-23.txt}.}
+MS2 es responsable del dominio operacional del aeropuerto: vuelos,
+aerolíneas, aeronaves, asientos y la tripulación asignada a cada vuelo.
+Se implementa en Java 21 con Spring Boot 4.0.8, persistencia con
+Spring Data JPA sobre PostgreSQL 16, migraciones versionadas con
+Flyway y documentación OpenAPI con springdoc.
+
+El modelo de datos tiene ocho tablas: \texttt{aerolinea}, \texttt{aeronave},
+\texttt{asiento}, \texttt{vuelo}, \texttt{empleado}, \texttt{tripulacion},
+\texttt{operativo\_tierra} y \texttt{opera\_tripulacion}. Las relaciones
+principales son \texttt{aerolinea} 1--N \texttt{vuelo}, \texttt{aeronave}
+1--N \texttt{vuelo}, \texttt{aeronave} 1--N \texttt{asiento} (entidad
+débil) y \texttt{tripulacion} N--M \texttt{vuelo} vía la tabla puente
+\texttt{opera\_tripulacion}. Las claves naturales del modelo monolítico
+se conservan: \texttt{aerolinea.ruc} y \texttt{aeronave.placa}, en vez
+de identificadores autogenerados.
+
+\texttt{empleado} reemplaza a la superclase \texttt{Persona} del modelo
+original para el personal del aeropuerto (identidad propia del
+servicio, ver Sección~\ref{sec:transformaciones}), con dos subtipos
+modelados como patrón IsA de JPA (\texttt{@MapsId}): \texttt{tripulacion}
+(\texttt{num\_licencia}) y \texttt{operativo\_tierra}
+(\texttt{area\_operativa}), cada una con su propia primary key
+compartida con \texttt{empleado.id}. La tabla puente
+\texttt{opera\_tripulacion} usa una clave primaria compuesta
+(\texttt{vuelo\_id}, \texttt{tripulacion\_empleado\_id}), modelada en
+JPA con \texttt{@IdClass} sobre una clase auxiliar sin correspondencia
+a ninguna tabla propia.
+
+Los endpoints, bajo el prefijo \texttt{/api/vuelos}, cubren CRUD de
+\texttt{aerolineas} (PK \texttt{ruc}) y \texttt{aeronaves} (PK
+\texttt{placa}, con \texttt{GET /aeronaves/\{placa\}/asientos}), CRUD de
+\texttt{vuelos} con filtros combinables \texttt{?num=\&estado=\&tipo=\&fecha=}
+implementados con \texttt{JpaSpecificationExecutor} (construye la
+consulta SQL dinámicamente según qué parámetros llegan, sin un método
+por cada combinación), consulta de \texttt{empleados} por id o por
+\texttt{tipo}, y asignación N--M de tripulación a un vuelo
+(\texttt{POST}/\texttt{GET /vuelos/\{id\}/tripulacion}).
+
+\texttt{PATCH /vuelos/\{id\}/estado} implementa una máquina de estados
+explícita (\texttt{EstadoVueloMaquina}) sobre el enum
+\texttt{estado\_vuelo}: \texttt{Programado} puede pasar a
+\texttt{Embarcando}, \texttt{Retrasado} o \texttt{Cancelado};
+\texttt{Embarcando} a \texttt{Despegado}, \texttt{Retrasado} o
+\texttt{Cancelado}; \texttt{Retrasado} a \texttt{Embarcando},
+\texttt{Despegado} o \texttt{Cancelado}; \texttt{Despegado} únicamente a
+\texttt{Aterrizado}; \texttt{Aterrizado} y \texttt{Cancelado} son
+estados finales sin transiciones salientes. Una transición fuera de esa
+tabla responde \texttt{422 TRANSICION\_ESTADO\_INVALIDA}, siguiendo el
+contrato de errores común. Al transicionar a \texttt{Despegado},
+\texttt{hora\_real} se registra automáticamente con la hora del
+servidor.
+
+\texttt{GET /vuelos/\{id\}/exists} es el endpoint liviano de validación
+consumido por MS1 (al emitir un ticket) y MS3 (al registrar una
+incidencia o asignación que referencia un vuelo): responde
+\texttt{200 \{exists, estado\}} si el vuelo existe y \texttt{404} en
+caso contrario, evitando que los servicios consumidores traigan el
+objeto completo solo para verificar existencia. Es el mismo mecanismo
+de referencia suave descrito en la Sección~\ref{sec:transformaciones}.
+
+Como el rango de \texttt{vuelo.id} es fijo y compartido entre servicios
+(1--25\,000, ver \texttt{contratos/enums.md}), el siguiente id se
+calcula con \texttt{SELECT COALESCE(MAX(id), 0) + 1} vía \texttt{@Query}
+en el repositorio, en vez de traer todas las filas a memoria. Es
+suficiente para el alcance del proyecto (pruebas manuales, sin
+escrituras concurrentes reales); se documenta como limitación conocida,
+no como pendiente.
+
+El manejo de errores sigue el contrato común mediante un
+\texttt{@RestControllerAdvice} único (\texttt{GlobalExceptionHandler})
+que traduce las excepciones de dominio a los códigos acordados:
+\texttt{VALIDACION} (400), \texttt{NO\_ENCONTRADO} (404),
+\texttt{CONFLICTO\_ESTADO} (409) y \texttt{TRANSICION\_ESTADO\_INVALIDA}
+(422).
+
+\textbf{Carga masiva.} El generador de datos ficticios
+(\texttt{seed/generar\_seed.py}) usa \texttt{Faker} con \texttt{SEED}
+fijo e inserciones por lote (\texttt{execute\_values} de psycopg2) para
+poblar 5 aerolíneas, 100 aeronaves, 21\,000 asientos, 300 empleados de
+tripulación, 20\,500 vuelos y sus asignaciones N--M de tripulación. Se
+empaqueta como contenedor Docker independiente y se ejecuta una sola
+vez contra la base de datos objetivo.
 
 \subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
 \pendiente{Documentar los esquemas JSON de \texttt{recursos},
@@ -149,6 +225,17 @@ para las llamadas a MS2.
     especificación en \texttt{/openapi.json} y Swagger-UI en
     \texttt{/docs}. Los cinco \texttt{openapi.yaml} borrador viven en la
     raíz de cada repositorio.
+  \item MS2 supera el mínimo de 20\,000 registros en sus dos tablas de
+    volumen: \texttt{vuelo} (20\,500) y \texttt{asiento} (21\,000),
+    verificado con \texttt{COUNT(*)} contra la VM-DB de producción el
+    23-Set-2026 (\texttt{docs/evidencias/backend/ms2-count-2026-09-23.txt}).
+  \item MS2 se acompaña de pruebas con \texttt{@SpringBootTest} y
+    \texttt{MockMvc} que cubren el happy path de creación de aerolínea,
+    validación de datos inválidos (\texttt{400 VALIDACION}), búsqueda
+    de recursos inexistentes (\texttt{404 NO\_ENCONTRADO}),
+    \texttt{GET /vuelos/\{id\}/exists} con y sin vuelo existente, y la
+    lógica de la máquina de estados en aislamiento (unit test puro,
+    sin base de datos, sobre \texttt{EstadoVueloMaquina}).
   \item MS4 se probó \emph{end-to-end} contra los MS1/MS2/MS3 reales
     durante el Hito 1: para el vuelo \texttt{id=1} devolvió el vuelo
     \texttt{CM0001 (Copa Airlines, LIM-TRU)}, la tripulación con
