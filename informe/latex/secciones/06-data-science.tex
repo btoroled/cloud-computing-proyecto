@@ -1,12 +1,196 @@
 \section{Data Science y catálogo de datos}
+\label{sec:data-science}
 \textit{Responsable: Fabricio; Alexander para el diagrama del catálogo.}
 
-\pendiente{Documentar S3, las tres ingestas, catálogo Glue, consultas Athena y dos vistas. La subsección del modelo E/R está redactada; queda contrastarla con el catálogo desplegado.}
+El componente de Data Science implementa un \emph{data lake} que unifica
+en un único catálogo consultable con SQL los datos que viven en tres
+motores heterogéneos (MySQL, PostgreSQL, MongoDB). El pipeline es:
+\texttt{seeds/} $\to$ carga de 20\,000 registros en cada base $\to$
+tres contenedores de ingesta $\to$ Amazon S3 $\to$ AWS Glue $\to$
+Amazon Athena $\to$ MS5 $\to$ frontend. Todo el pipeline vive en el
+repositorio \texttt{aeropuerto-data-science}.
 
 \subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+
+\subsubsection{Generador de datos ficticios (\texttt{seeds/}, DS-02)}
+La coherencia de identificadores entre servicios se resuelve con un
+generador Python único en \texttt{aeropuerto-data-science/seeds/} con
+\texttt{SEED = 20\,260\,905} fijo y orden interno
+\textbf{MS2 $\to$ MS1 $\to$ MS3}. Cualquier miembro del equipo clona el
+repositorio y ejecuta \texttt{python seeds/generar.py}; el archivo
+resultante es idéntico byte a byte a cualquier otra corrida con el
+mismo \emph{seed} (comprobado por MD5). Cada dueño de servicio carga
+solo la carpeta que le corresponde
+(\texttt{output/ms1/*.csv}, \texttt{output/ms2/*.csv},
+\texttt{output/ms3/*.jsonl}). Los identificadores cruzan entre
+servicios porque salen del mismo \emph{seed}: \texttt{ticket.vuelo\_id}
+de MS1 apunta a un \texttt{vuelo.id} que existe en MS2 aunque cada dev
+cargue por su cuenta.
+
+Volúmenes generados que satisfacen el requisito de veinte mil registros
+en al menos una tabla por base:
+
+\begin{itemize}
+  \item MS1: 25\,000 tickets, 22\,814 equipajes, 60\,000 pasajeros.
+  \item MS2: 25\,000 vuelos, 33\,614 asientos, 150 aeronaves.
+  \item MS3: 25\,000 incidencias, 40\,000 asignaciones, 500 recursos.
+\end{itemize}
+
+El generador inyecta un sesgo controlado para que los \emph{joins}
+tengan señal: el 55\,\% de los vuelos ocurre en las franjas 06--09h y
+18--21h (habilita Q5) y las incidencias de tipo
+\texttt{Falta\_Combustible} se concentran al 100\,\% en dos aerolíneas
+específicas (habilita Q3 con ranking claro).
+
+\subsubsection{Los tres contenedores de ingesta (DS-06/07/08)}
+Cada microservicio con base propia tiene su contenedor Python en
+\texttt{aeropuerto-data-science/ingesta/}:
+
+\begin{itemize}
+  \item \texttt{ingesta-ms1} (MySQL, Guillermo): abre conexión con
+    \texttt{sqlalchemy + pymysql}, ejecuta \texttt{SELECT *} en las seis
+    tablas del servicio, produce un CSV por tabla y lo sube a
+    \texttt{s3://mla-aeropuerto-lake/raw/ms1/\{tabla\}/\{fecha\}/\{tabla\}.csv}.
+  \item \texttt{ingesta-ms2} (PostgreSQL, Mariano): idéntica estructura
+    con \texttt{psycopg2}, escribe en \texttt{raw/ms2/}.
+  \item \texttt{ingesta-ms3} (MongoDB, Edinson): además de leer las tres
+    colecciones, aplana los arrays anidados de \texttt{incidencias}
+    (\texttt{afecta\_recursos[]} y \texttt{retrasa\_vuelos[]}) en tres
+    tablas relacionales de bridge
+    (\texttt{incidencia\_afecta\_recurso},
+    \texttt{incidencia\_retrasa\_vuelo}) para que Athena pueda hacer
+    \texttt{JOIN} sin necesidad de \texttt{UNNEST}. Escribe en
+    \texttt{raw/ms3/}.
+\end{itemize}
+
+La estrategia es \emph{pull del 100\,\%} de una sola vez (no
+incremental), como pide el enunciado. Los tres contenedores se orquestan
+con \texttt{docker compose} en la VM-INGESTA.
+
+\subsubsection{Catálogo AWS Glue (DS-09/10)}
+Sobre el bucket \texttt{s3://mla-aeropuerto-lake/} se crea la base de
+datos \texttt{aeropuerto\_lake} y un \emph{crawler} por prefijo
+(\texttt{raw/ms1/}, \texttt{raw/ms2/}, \texttt{raw/ms3/}). Cada
+\emph{crawler} genera una tabla del catálogo por CSV, infiere los tipos
+y expone las 19 tablas a Athena. Se ajustan los tipos inferidos donde
+el \emph{crawler} identifica \texttt{string} en lugar de
+\texttt{timestamp} (columnas \texttt{fecha\_reporte},
+\texttt{hora\_programada}) y se verifica cada tabla con
+\texttt{SELECT * FROM aeropuerto\_lake.\{tabla\} LIMIT 10}. La estructura
+final del catálogo se documenta en la subsección
+\ref{sec:catalogo-er}.
+
+\subsubsection{Cinco consultas Athena con \texttt{JOIN} (DS-11)}
+Las cinco consultas de negocio que respaldan MS5 se validaron primero
+en un Postgres local (\texttt{athena/local-postgres/} en el repositorio
+de Data Science) sobre los datos del \emph{seed} y luego se portaron a
+la sintaxis Athena/Trino. Los archivos SQL de ambas versiones viven en
+\texttt{athena/queries/postgres/} y \texttt{athena/queries/athena/}, con
+una guía paso a paso en \texttt{athena/queries/SETUP\_ATHENA.md} para
+ejecutarlas en la consola de Athena una vez el catálogo está listo.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.06\textwidth}p{0.30\textwidth}X}
+\toprule
+Query & Pregunta de negocio & Tablas cruzadas \\
+\midrule
+Q1 & Recurso con más incidencias en los últimos $N$ días,
+     con severidad ponderada y tiempo promedio de reparación &
+     \texttt{recurso} $\bowtie$
+     \texttt{incidencia\_afecta\_recurso} $\bowtie$
+     \texttt{incidencia} (MS3) \\
+Q2 & Retraso promedio de vuelos internacionales, con
+     percentiles y desglose por franja horaria &
+     \texttt{vuelo} (MS2) \\
+Q3 & Ranking de aerolíneas por incidencias de
+     \texttt{Falta\_Combustible}, con tasa por 1\,000 vuelos &
+     \texttt{aerolinea} $\bowtie$ \texttt{vuelo} (MS2) $\bowtie$
+     \texttt{incidencia\_retrasa\_vuelo} $\bowtie$ \texttt{incidencia}
+     (MS3) \\
+Q4 & Recaudación TUUA por categoría migratoria, solo pasajeros
+     efectivos &
+     \texttt{ticket} $\bowtie$ \texttt{pasajero} $\bowtie$
+     \texttt{categoria\_migratoria} (MS1) $\bowtie$ \texttt{vuelo}
+     (MS2) \\
+Q5 & Porcentaje de vuelos en hora punta (06--09h y 18--21h)
+     retrasados, comparado con no punta &
+     \texttt{vuelo} (MS2) \\
+\bottomrule
+\end{tabularx}
+\caption{Las cinco consultas respaldan los cinco endpoints de MS5. Q3 y
+Q4 cruzan dos motores distintos; Q1 usa solo MS3; Q2 y Q5 usan solo
+MS2.}
+\label{tab:athena-queries}
+\end{table}
+
+Las decisiones sintácticas para portar el SQL de PostgreSQL a Athena
+(Trino/Presto) son:
+\texttt{EXTRACT(EPOCH FROM (a - b)) / 60.0} $\to$
+\texttt{date\_diff('minute', b, a)};
+\texttt{PERCENTILE\_CONT WITHIN GROUP} $\to$
+\texttt{approx\_percentile};
+\texttt{STDDEV\_POP} $\to$ \texttt{stddev};
+\texttt{x::numeric} $\to$ \texttt{CAST(x AS DECIMAL)};
+\texttt{NOW()} $\to$ \texttt{current\_timestamp}.
+
+\subsubsection{Dos vistas materializadas (DS-12)}
+Q4 y Q5 se exponen como vistas de Athena para que MS5 no cargue el SQL
+completo en cada petición:
+\texttt{CREATE OR REPLACE VIEW vw\_recaudacion\_tuua AS ...} y
+\texttt{CREATE OR REPLACE VIEW vw\_retrasos\_hora\_punta AS ...}. Los
+endpoints \texttt{/recaudacion-tuua-por-categoria} y
+\texttt{/vuelos-hora-punta-retrasados} de MS5 consultan directamente
+esas vistas. Los DDL viven en \texttt{athena/queries/views/}.
 
 \subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+
+Los resultados de las cinco consultas sobre los datos del \emph{seed}
+confirman la corrección del pipeline y validan las decisiones del
+generador:
+
+\begin{itemize}
+  \item \textbf{Q3 verifica el sesgo intencional del generador}: LATAM
+    Airlines Peru (89,13\,\% de sus vuelos afectados, tasa 891,27 por
+    mil) y Copa Airlines (89,90\,\%, tasa 899,00) concentran el
+    100\,\% de las incidencias de \texttt{Falta\_Combustible}; las
+    otras 22 aerolíneas quedan en cero. El ranking es inequívoco.
+  \item \textbf{Q4 preserva la distribución del contrato}: 60\,\%
+    Nacional, 35\,\% Internacional, 5\,\% Tránsito en pasajeros
+    efectivos, coherente con la distribución sembrada. Sin embargo,
+    Internacional recauda el 61\,\% del total de TUUA aunque solo
+    aporta el 35\,\% de los pasajeros, dado que su tarifa es 3 veces
+    la de Nacional (S/.\,38.45 frente a S/.\,12.50). El desbalance
+    explica por qué el dashboard de crisis prioriza la vista analítica
+    sobre los vuelos internacionales.
+  \item \textbf{Q1} produce un \emph{top} de 6 radares y 4 mangas con
+    entre 50 y 60 incidencias en los últimos siete días, con un tiempo
+    promedio de reparación cercano a 37 horas y un porcentaje de
+    incidencias abiertas entre 19\,\% y 37\,\% (consistente con el
+    parámetro \texttt{PCT\_INCIDENCIA\_ABIERTA = 30\,\%} del
+    \emph{seed}).
+  \item \textbf{Q2} sitúa a American Airlines y United Airlines como
+    las aerolíneas con peor retraso promedio (aproximadamente 32
+    minutos) en vuelos internacionales, con P90 alrededor de 90
+    minutos. La franja horaria \emph{Noche} (18--24h) presenta el peor
+    retraso promedio (29,18 min frente a 26,72 min en madrugada).
+  \item \textbf{Q5} no muestra diferencia significativa entre hora
+    punta y no punta (aproximadamente 38--39\,\% de retrasados en
+    ambas franjas). Este es un hallazgo del generador --- no de la
+    consulta ---: el \emph{seed} sesga la \emph{hora} de los vuelos
+    hacia horas pico (55\,\%) pero no correlaciona el
+    \texttt{estado = "Retrasado"} con la hora. La consulta es
+    correcta; con datos reales de operación esperaríamos ver la
+    diferencia.
+\end{itemize}
+
+Las salidas completas se conservan como referencia en
+\texttt{athena/expected/q\{1..5\}.txt} del repositorio de Data Science.
+
+\pendiente{Adjuntar las capturas de la consola Athena ejecutando las
+cinco consultas y las dos vistas, el listado
+\texttt{aws s3 ls s3://mla-aeropuerto-lake/raw/ --recursive} y la
+consola de Glue mostrando los crawlers ejecutados y las 19 tablas del
+catálogo (DS-14).}
 
 \input{secciones/06-catalogo-er}
