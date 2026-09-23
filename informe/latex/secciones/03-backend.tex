@@ -31,20 +31,33 @@ agrega vía HTTP; MS5 consulta el data lake.}
 \pendiente{Documentar los endpoints implementados, migraciones Alembic,
 seed de 20\,000 tickets, la validación \texttt{MS1$\to$MS2} en
 \texttt{POST /tickets} y la evidencia del \texttt{COUNT(*)} en las tablas
-de volumen (\texttt{ticket}, \texttt{equipaje}).}
+de volumen (\texttt{ticket}, \texttt{equipaje}). Evidencia real ya recolectada
+(carga de 25\,000 tickets contra la VM-DB de producción y log real de la
+llamada saliente \texttt{MS1$\to$MS2}, 23-Set-2026):
+\texttt{docs/evidencias/backend/ms1-count-2026-09-23.txt} y
+\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}.}
 
 \subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
 \pendiente{Documentar el modelo Flyway, la máquina de estados de
 \texttt{vuelo.estado}, el endpoint \texttt{GET /vuelos/\{id\}/exists}
 usado por MS1 y MS3, la tripulación N-M y el seed de 20\,000 vuelos.
-Adjuntar la evidencia del \texttt{COUNT(*)}.}
+Adjuntar la evidencia del \texttt{COUNT(*)}. Ya recolectada: 20\,500 vuelos +
+21\,000 asientos contra la VM-DB de producción, 23-Set-2026 --
+\texttt{docs/evidencias/backend/ms2-count-2026-09-23.txt}.}
 
 \subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
 \pendiente{Documentar los esquemas JSON de \texttt{recursos},
 \texttt{incidencias} y \texttt{asignaciones}, los endpoints CRUD, la
 validación \texttt{MS3$\to$MS2} al crear una incidencia con
 \texttt{retrasa\_vuelos[]}, y el seed de 20\,000 incidencias con la
-evidencia del \texttt{db.incidencias.countDocuments()}.}
+evidencia del \texttt{db.incidencias.countDocuments()}. Ya recolectada:
+25\,000 incidencias reales (verificadas con \texttt{countDocuments()}) y log
+real de \texttt{MS3$\to$MS2}, 23-Set-2026 --
+\texttt{docs/evidencias/backend/ms3-count-2026-09-23.txt} y
+\texttt{docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt}. Swagger-UI
+agregado hoy en \texttt{/api/infra/docs} (MS3-09) -- pendiente de que la
+imagen se publique en Docker Hub (bloqueado por permisos del token, ver
+\texttt{docs/plan/personas/benja.md}).}
 
 \subsubsection{MS4 --- Manifiesto de vuelo (Fabricio)}
 MS4 es un agregador HTTP sin base de datos propia. Recibe una petición

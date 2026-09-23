@@ -102,10 +102,14 @@ ejecución Athena (poll + cache TTL) → 5 endpoints `GET /analitica/*` (Q1–Q5
 
 ### 2.8 Consumo entre microservicios (evidencia obligatoria)
 
-- [ ] **MS1 → MS2** en `POST /tickets` (valida vuelo con `GET /vuelos/{id}/exists`) — log de la llamada saliente
+- [x] **MS1 → MS2** en `POST /tickets` (valida vuelo con `GET /vuelos/{id}/exists`) — log de la llamada saliente.
+  Verificado 2026-09-23: `docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt`
 - [x] **MS3 → MS2** en `POST /incidencias` — log de la llamada saliente. Verificado 2026-09-23:
   `docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt` (llamada real, no mock)
-- [ ] **MS4 → MS1/MS2/MS3** en `GET /manifiesto/{vuelo_id}` — respuesta consolidada
+- [x] **MS4 → MS1/MS2/MS3** en `GET /manifiesto/{vuelo_id}` — respuesta consolidada. Verificado
+  2026-09-23 con datos reales de MS2 y MS3 en el cuerpo de la respuesta (ver evidencia); el filtro
+  de `pasajeros` hacia MS1 quedó vacío con datos reales — pendiente de que Fabricio lo revise antes
+  del PDF, no invalida que la llamada saliente sí ocurre
 
 ---
 
