@@ -1,0 +1,18 @@
+Evidencia: carga masiva MS1 (MySQL) contra la VM-DB real
+Fecha: 2026-09-23
+Metodo: app/scripts/load_csv.py (Guillermo) corrido dentro del contenedor ms1 real en VM-PROD-1,
+usando los CSV compartidos de aeropuerto-data-science/seeds/output/ms1/ (generados con SEED=42).
+
+Salida del script (load_csv.py):
+  categoria_migratoria: 3 filas
+  persona: 60000 filas
+  pasajero: 60000 filas
+  ticket: 25000 filas
+  checkin: 16577 filas
+  equipaje: 22814 filas
+  Total: 184394 filas
+
+Verificacion independiente (mysql -e "SELECT COUNT(*) FROM pasajeros.ticket"):
+  tickets: 25000
+
+Cumple el requisito de >=20000 registros en al menos 1 tabla por BD.
