@@ -16,7 +16,10 @@ Documentos base: [plan general §6](../plan-de-trabajo.md#6-checklist-hito-2--en
 - [ ] Cada BD SQL con **≥2 tablas relacionadas**; **E/R** de MySQL y PostgreSQL + **JSON Schema** de MongoDB
 - [ ] **≥1 microservicio consume a otro** (MS1→MS2, MS3→MS2, MS4→MS1/MS2/MS3) — con evidencia en logs
 - [ ] **1 microservicio sin BD** (MS4) + **1 microservicio analítico con Athena** (MS5)
-- [ ] **Carga masiva ≥20 000 registros**, una vez, en ≥1 tabla por BD (`ticket`, `vuelo`, `incidencias`) — evidencia `COUNT(*)`
+- [x] **Carga masiva ≥20 000 registros** — `ticket` (MySQL): **25 000** ✅ · `vuelo` (PostgreSQL): **20 500** ✅ ·
+  `incidencias` (MongoDB): **pendiente**, bloqueado en Edinson (sin seed ni generador todavía).
+  Evidencia `COUNT(*)`: `docs/evidencias/backend/ms1-count-2026-09-23.txt`,
+  `docs/evidencias/backend/ms2-count-2026-09-23.txt`
 - [ ] Despliegue `docker compose` en **2 VM-PROD** + **ALB/NLB privado**; APIs públicas **solo** por **API Gateway HTTPS**; **3 BD en VM privada** sin IP pública
 - [ ] **Swagger-UI** navegable de las 5 APIs + página agregada
 - [ ] **Frontend en Amplify** con **4 vistas** consumiendo **los 5 microservicios**, **≥2 métodos REST c/u**
@@ -141,7 +144,7 @@ Hecho en Hito 1: bucket S3 + VM-INGESTA + `ingesta-ms3` con datos en S3. Falta:
 | DS-12 | Crear las **2 vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Fabricio | `SHOW VIEWS` las lista; DDL en `athena/` |
 | DS-13 | **E/R del catálogo** (`diagramas/er-catalogo-datalake.drawio`) con todas las tablas + claves de join | Fabricio / Alexander | Diagrama entregado |
 | DS-14 | Evidencias en `docs/evidencias/athena/` (5 queries + 2 vistas + `aws s3 ls` + Glue console) | Fabricio | Carpeta completa |
-| DS-15 | **Carga masiva real:** ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Guillermo/Mariano/Edinson | S3 con el 100% de los datos de las 3 BD |
+| DS-15 | **Carga masiva real:** ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Guillermo/Mariano/Edinson | **MS1+MS2 completo** (`raw/ms1/`, `raw/ms2/` con datos reales, 2026-09-23) · **MS3 pendiente** (bloqueado: sin seed/ingesta de Edinson) |
 
 ---
 
