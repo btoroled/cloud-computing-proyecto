@@ -230,6 +230,47 @@ Verificado contra el estado real de los 9 repos (no solo contra este checklist),
 - Nota menor: el script de Guillermo salta el upload cuando una tabla tiene 0 filas; el de Mariano sube
   igual un CSV vacío (solo encabezado). No es un bug, solo una diferencia de criterio entre ambos.
 
+### 🟢 Cierre de la cadena de datos: carga masiva + Glue + Athena (2026-09-23)
+
+- **Carga masiva real contra la VM-DB de hoy:** MS1 (`load_csv.py` de Guillermo) → 184 394 filas,
+  **25 000 tickets**. MS2 (generador de Mariano) → **20 500 vuelos** + 21 000 asientos. Ambos
+  verificados con `COUNT(*)` independiente, no solo el log del script
+  (`docs/evidencias/backend/ms{1,2}-count-2026-09-23.txt`).
+- Re-corrí `ingesta-ms1`/`ingesta-ms2` sobre estos datos reales → `s3://mla-aeropuerto-lake/raw/ms{1,2}/`
+  ya tiene el 100% real, no CSVs vacíos.
+- **DS-09 (Glue):** creé `aeropuerto_lake` + 1 crawler por prefijo (`LabRole`). 14 tablas catalogadas
+  (6 de MS1, 8 de MS2); el crawler de MS3 corrió pero no encontró nada (bloqueado en Edinson).
+- **DS-10 (esquemas):** encontré y arreglé un bug real — el crawler infiere `hora_programada`/
+  `hora_real` como `varchar` (formato real `2026-09-30 06:15:00+00:00`, ISO8601 con offset), y las
+  queries de Fabricio que usaban `date_diff()`/`EXTRACT()` directo fallaban. Arreglado envolviendo con
+  `from_iso8601_timestamp(replace(col,' ','T'))` en vez de forzar el tipo de columna en el catálogo.
+- **DS-11 (Athena):** configuré el workgroup (`OutputLocation=s3://mla-aeropuerto-lake/athena-results/`)
+  y corrí las 5 queries reales de Fabricio. **3 de 5 (Q2, Q4, Q5) funcionan con datos reales** — evidencia
+  completa en `docs/evidencias/athena/`. Q1 y Q3 necesitan la tabla `incidencia` (MS3), bloqueadas.
+- **DS-12 (vistas):** las 2 vistas (`vw_recaudacion_tuua`, `vw_retrasos_hora_punta`) creadas y
+  confirmadas con `SHOW VIEWS` — la segunda necesitó el mismo fix de timestamps que Q5.
+- Commits en `aeropuerto-data-science` (fix de las 3 queries) y en `cloud-computing-proyecto`
+  (checklist + evidencia), todo pusheado.
+
+### 🟢 EX-07 — PPT resumen del Hito 2 (2026-09-23)
+
+- Generé `ppt/hito2-resumen.pptx` (18 slides) con `python-pptx`: portada, agenda, y las 9 secciones del
+  plan (intro, arquitectura + diagrama, backend, transformaciones, frontend, data science, despliegue,
+  repos, conclusiones), con el estado real de hoy (no aspiracional) y la evidencia recolectada en esta
+  sesión. El equipo puede seguir editándolo directamente.
+
+### Lo que sigue bloqueado y no es mío para resolver solo
+
+- **`ingesta-ms3` / seed de `incidencias`** — Edinson. Bloquea Q1, Q3, y el 3er tercio de DS-09/DS-15.
+- **Amplify** — pendiente que Jobeth lo despliegue desde la consola web (instrucciones ya enviadas);
+  si también falla ahí, activar contingencia S3+CloudFront (R1).
+- **DA-04** — revisión cruzada del diagrama con Fabricio y Alexander (necesita su input, no solo el mío).
+- **EX-08 (informe final)** — `03-backend.tex` (4 pendientes), `05-frontend.tex` (2), `06-data-science.tex`
+  (1) siguen con secciones sin cerrar de Guillermo/Mariano/Edinson/Fabricio/Alexander — no es correcto
+  que yo las escriba por ellos.
+- **EX-10 (subida a Canvas)** — requiere login al LMS del curso, fuera de mi alcance.
+- **EX-11/EX-12** — ensayo y exposición presencial, requieren al equipo completo.
+
 ### 🟢 Despliegue real de infra (2026-09-22) — cuenta AWS de Jobeth
 
 - **Cambio de cuenta:** el crédito de AWS Academy de Benja se agotó; el equipo despliega desde hoy en
