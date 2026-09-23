@@ -2,7 +2,7 @@
 \textit{Responsable: Benjamín y equipo.}
 
 \pendiente{Esta sección se cierra al final, cuando todo el equipo termine su parte (F3). Lo que sigue es
-un borrador con lo verificado hasta el 22-Set-2026 — revisar y completar antes de exportar el PDF.}
+un borrador con lo verificado hasta el 23-Set-2026 — revisar y completar antes de exportar el PDF.}
 
 \subsection{Implementación y decisiones}
 
@@ -17,12 +17,40 @@ Contingencias realmente aplicadas (no solo previstas en el plan de riesgos):
 \item \textbf{Cuenta de AWS}: el despliegue final corre en la cuenta de Alexander (AWS Academy),
   no en la de Benjamín, por agotamiento de crédito — la infraestructura es 100\% reproducible por
   Terraform, así que el cambio de cuenta no implicó rehacer el diseño, solo re-aplicar.
+\item \textbf{\texttt{ingesta-ms3}}: no existía a 2 días de la entrega. Se construyó adaptando el
+  aplanado de referencia que Fabricio ya había escrito y validado localmente
+  (\texttt{athena/local-postgres/aplanar\_ms3.py}) para leer de una MongoDB real en vez de JSONL
+  local — reutilizando su diseño, no inventando lógica de negocio nueva.
 \pendiente{Confirmar si finalmente se usó Amplify para el frontend o si se activó la contingencia
-S3+CloudFront (R1) — Amplify aparecía bloqueado por política en la cuenta nueva al momento de
-escribir esto; pendiente de confirmar si el bloqueo también aplica desde la consola web.}
+S3+CloudFront (R1) — Amplify aparecía bloqueado por política en la cuenta nueva; instrucciones de
+despliegue por consola ya enviadas a Alexander, falta confirmar el resultado.}
 \end{itemize}
 
 \subsection{Resultados y evidencias}
 
-\pendiente{Completar con el resumen final: qué se demostró con evidencia real por cada punto de la
-rúbrica, qué quedó parcial o mockeado, y qué se dejaría para una siguiente iteración del proyecto.}
+Estado verificado al 23-Set-2026, con evidencia real (no mockeada) salvo donde se indica:
+
+\begin{itemize}
+\item \textbf{Backend}: 5 microservicios, 3 lenguajes, 3 motores de BD distintos, corriendo en
+  producción (\texttt{docker compose ps} con los 6 contenedores \texttt{healthy} en ambas VM-PROD).
+\item \textbf{Consumo entre servicios}: MS3→MS2 verificado con log real de la llamada saliente y su
+  traducción al contrato de error común. MS1→MS2 y MS4→MS1/2/3 tienen el código y los endpoints, pero
+  sin una captura de log explícita como la de MS3→MS2 — pendiente antes del PDF final.
+\item \textbf{Carga masiva}: las 3 BD superan el mínimo de 20\,000 — MySQL 25\,000 tickets, PostgreSQL
+  20\,500 vuelos, MongoDB 25\,000 incidencias — cada una con \texttt{COUNT(*)}/\texttt{countDocuments()}
+  independiente, no solo el log del script de carga.
+\item \textbf{Despliegue y seguridad}: único camino público verificado con \texttt{curl} real desde
+  fuera de la VPC; acceso directo a VM-PROD/ALB confirmado bloqueado (timeout/connection refused).
+\item \textbf{Data Science}: pipeline completo y real, no simulado — 3 contenedores de ingesta
+  (MS1/MS2/MS3) corridos contra las bases de datos en producción, subiendo a S3; catálogo Glue con las
+  19 tablas de las 3 fuentes; las 5 consultas de Athena (Q1–Q5) y las 2 vistas devuelven filas reales.
+\item \textbf{Lo que queda parcial}: Swagger-UI agregada (MS4/MS5 exponen \texttt{/docs} en la raíz, no
+  bajo su prefijo de negocio — pendiente decidir si el agregador de Alexander lo resuelve o si se
+  documenta como limitación); Frontend/Amplify sin confirmar; E/R por persona sin subir a
+  \texttt{docs/er/}; revisión cruzada del diagrama (DA-04) sin hacer.
+\item \textbf{Trabajo futuro}: formalizar el reinicio cronometrado (<15 min) tras un corte real de
+  sesión; automatizar logs a CloudWatch (hoy son locales, alternativa válida del checklist pero menos
+  robusta); resolver la inconsistencia de convención de nombres de variables de entorno entre
+  microservicios (\texttt{MS2\_URL} vs.\ \texttt{MS2\_BASE\_URL}) documentándola como estándar del
+  equipo para evitar que se repita.
+\end{itemize}
