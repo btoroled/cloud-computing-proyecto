@@ -15,31 +15,31 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
 | ✅ | — | Crear la organización GitHub + los 9 repos (README + LICENSE + plantilla) e invitar al equipo | 0.5d | — | 9 repos creados; equipo con acceso |
-| ☐ | — | Validar Learner Lab en orden EC2+VPC → S3 → Glue+Athena → API Gateway+VPC Link → Amplify y escribir [`aws-learner-lab-hallazgos.md`](../../aws-learner-lab-hallazgos.md) | 0.5d | Learner Lab | Doc de hallazgos con qué hay y qué no |
+| ⛔ | — | ~~Validar Learner Lab en orden EC2+VPC → S3 → Glue+Athena → API Gateway+VPC Link → Amplify y escribir `aws-learner-lab-hallazgos.md`~~ | 0.5d | Learner Lab | **Descartada (2026-09-22, decisión de Benja)** — el despliegue real ya está hecho y verificado (ver registro de avance); no se justifica retroceder a documentar el hallazgo formal en la cuenta de Jobeth |
 | 🟡 | BE-TX-01 | Acordar y versionar `contratos/enums.md` y rangos de ID (con todo el equipo) | 0.5d | — | Archivo aprobado en repo docs |
 | ✅ | BE-TX-02 | Plantilla de repo de microservicio (estructura, `.editorconfig`, `.env.example`, `README` base) | 0.5d | — | 5 repos creados desde plantilla |
-| 🟡 | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | Imágenes construyen y publican a GHCR |
+| ✅ | BE-TX-04 | Imagen base Docker por lenguaje (Py 3.12-slim, Temurin 21, Node 20-alpine) + healthcheck | 0.5d | — | `plantilla/docker/Dockerfile.{python,java,node}` con `HEALTHCHECK`; las 5 imágenes reales ya construyen y publican (a Docker Hub, no GHCR) |
 | ✅ | BE-TX-08 | Contrato de errores común (JSON de error, códigos 400/404/422/502) | 0.25d | — | Documentado en `contratos/` |
-| ☐ | BE-INT-01 | VPC + subredes privadas + IGW/NAT + Security Groups | 1d | Learner Lab OK | SGs mínimos aplicados |
-| ☐ | BE-INT-02 | 3 EC2: VM-PROD-1, VM-PROD-2, VM-DB + acceso por SSM (sin puerto 22 público) | 0.5d | BE-INT-01 | Acceso por SSM funcionando |
-| 🟡 | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | PNG compartido en el repo docs |
+| ✅ | BE-INT-01 | VPC + subredes privadas + IGW/NAT + Security Groups | 1d | Learner Lab OK | SGs mínimos aplicados |
+| ✅ | BE-INT-02 | 4 EC2: VM-PROD-1, VM-PROD-2, VM-DB, VM-INGESTA + acceso por SSM (sin puerto 22 público) | 0.5d | BE-INT-01 | Acceso por SSM funcionando |
+| ✅ | DA-01 | Boceto v0 del diagrama con la topología planeada | 0.5d | [arquitectura](../../arquitectura.md) | `diagramas/arquitectura-solucion.md` (Mermaid) — superado por DA-03 (v2 final) |
 
 ## F1 — Núcleo + deploy v1 (Sáb 6 – Sáb 12 · Hito 1)
 
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
-| 🟡 | BE-TX-05 | GitHub Actions: build + push a GHCR en tag `vX.Y` | 0.5d | BE-TX-02 | Tag dispara imagen `ghcr.io/btoroled/<repo>:<tag>` |
-| 🟡 | BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | 0.5d | contratos | nginx enruta a los 5 servicios locales |
-| 🟡 | BE-INT-03 | VM-DB: `compose` con `mysql:8` + `postgres:16` + `mongo:7` + volúmenes | 0.5d | BE-INT-02 | Los 3 motores `Up`; solo VM-PROD conecta |
-| 🟡 | BE-INT-04 | VM-PROD ×2: `compose` con nginx + MS1..MS5 (pull de GHCR) | 1d | BE-TX-06, imágenes | 5 servicios `Up` en ambas VMs |
-| ☐ | BE-INT-05 | ALB interno (o NLB) → target de las 2 VM-PROD:80 | 0.5d | BE-INT-04 | Balancea entre las 2 VMs |
-| ☐ | BE-INT-06 | API Gateway HTTP API + VPC Link → ALB; ruta `/{proxy+}` | 1d | BE-INT-05, Learner Lab | URL pública HTTPS responde `/api/*/health` |
-| 🟡 | BE-INT-07 | `RUNBOOK.md` de reinicio tras corte (< 15 min) + script de dumps a S3 | 0.5d | BE-INT-03 | Reinicio cronometrado documentado |
-| ☐ | DS-04 | Bucket S3 + estructura de prefijos `raw/ms{1,2,3}/` + política `LabRole` | 0.25d | Learner Lab | `aws s3 ls` muestra el bucket |
-| ☐ | DS-05 | VM-INGESTA (EC2 `t3.small`) + `compose` de los 3 contenedores + acceso lectura a VM-DB | 0.5d | BE-INT-02 | `compose` levanta; alcanza la VM-DB |
-| ☐ | DA-02 | Diagrama v1 tras validar Learner Lab (ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no) | 0.5d | hallazgos Learner Lab | Refleja las decisiones tomadas |
+| ✅ | BE-TX-05 | GitHub Actions: build + push a Docker Hub en push a `main`/tag `vX.Y` | 0.5d | BE-TX-02 | Tag/push dispara imagen `btoroled/<repo>:<tag>` (migrado de GHCR el 2026-09-22) |
+| ✅ | BE-TX-06 | `nginx.conf` reverse proxy por path (`/api/pasajeros`, `/api/vuelos`, …) | 0.5d | contratos | nginx enruta a los 5 servicios — verificado con `curl` real |
+| ✅ | BE-INT-03 | VM-DB: `compose` con `mysql:8` + `postgres:16` + `mongo:7` + volúmenes | 0.5d | BE-INT-02 | Los 3 motores `Up`/`healthy` — verificado por SSM |
+| ✅ | BE-INT-04 | VM-PROD ×2: `compose` con nginx + MS1..MS5 (pull de Docker Hub) | 1d | BE-TX-06, imágenes | 5 servicios `Up` en ambas VMs — verificado por SSM |
+| ✅ | BE-INT-05 | ALB interno (o NLB) → target de las 2 VM-PROD:80 | 0.5d | BE-INT-04 | Balancea entre las 2 VMs — 2/2 targets `healthy` |
+| ✅ | BE-INT-06 | API Gateway HTTP API + VPC Link → ALB; ruta `/{proxy+}` | 1d | BE-INT-05, Learner Lab | URL pública HTTPS responde `/api/*/health` — verificado con `curl` desde afuera (200) |
+| 🟡 | BE-INT-07 | `RUNBOOK.md` de reinicio tras corte (< 15 min) + script de dumps a S3 | 0.5d | BE-INT-03 | Script de dumps probado con datos reales (3.6MB MySQL + 14KB Postgres + 2KB Mongo en S3); **falta** cronometrar un reinicio real tras corte |
+| ✅ | DS-04 | Bucket S3 + estructura de prefijos `raw/ms{1,2,3}/` + política `LabRole` | 0.25d | Learner Lab | `aws s3 ls` muestra el bucket — creado 2026-09-22 |
+| 🟡 | DS-05 | VM-INGESTA (EC2 `t3.small`) + `compose` de los 3 contenedores + acceso lectura a VM-DB | 0.5d | BE-INT-02 | EC2 lista y alcanza VM-DB; **compose sigue siendo el placeholder** — falta que Data Science traiga los 3 reales |
+| ⛔ | DA-02 | ~~Diagrama v1 tras validar Learner Lab~~ | 0.5d | hallazgos Learner Lab | **Saltado** — se fue directo a DA-03 (v2 final) con la infra real ya desplegada, sin pasar por un v1 intermedio |
 | 🟡 | EX-01 | Plantilla del informe (Word/Docs) con las 9 secciones + placeholders de evidencia | 0.5d | — | Plantilla compartida |
-| ☐ | EX-02 | Slides de avance Hito 1 (1–2 por integrante) + consolidación | 1d | avance F1 | PPT de avance listo |
+| ✅ | EX-02 | Slides de avance Hito 1 (1–2 por integrante) + consolidación | 1d | avance F1 | PPT de avance listo (`ppt/avance-hito1.pptx` existe en el repo) |
 | 🟡 | EX-03 | Guion de la demo corta de Hito 1 + ensayo interno | 0.5d | deploy v1 | Demo de ≤10 min ensayada |
 | ☐ | EX-04 | **Exposición virtual con ACL** (con todo el equipo) | 0.5d | EX-02/03 | Realizada; feedback del ACL anotado |
 
@@ -47,9 +47,9 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
-| ☐ | BE-INT-08 | Prueba de humo E2E por la URL pública + verificación de "privado" (ALB/BD inaccesibles) | 0.5d | todo F2 | Script E2E verde |
-| ☐ | BE-INT-09 | Logs de contenedores a CloudWatch (o local) + healthchecks en `compose` | 0.5d | BE-INT-04 | Logs visibles; healthchecks activos |
-| ☐ | DA-03 | Diagrama v2 final: nombres reales de recursos, todos los servicios, IDs de subred/SG | 0.5d | despliegue F2 | Coincide 1:1 con lo desplegado |
+| ✅ | BE-INT-08 | Prueba de humo E2E por la URL pública + verificación de "privado" (ALB/BD inaccesibles) | 0.5d | todo F2 | Script E2E verde — `docs/evidencias/infra/smoke-e2e-2026-09-22.txt` |
+| ✅ | BE-INT-09 | Logs de contenedores a CloudWatch (o local) + healthchecks en `compose` | 0.5d | BE-INT-04 | Logs locales (`json-file`, ya cumplía la alternativa "o local"); healthchecks agregados y verificados `healthy` en los 6 servicios de ambas VM-PROD |
+| 🟡 | DA-03 | Diagrama v2 final: nombres reales de recursos, todos los servicios, IDs de subred/SG | 0.5d | despliegue F2 | Coincide 1:1 con lo desplegado |
 | ☐ | DA-04 | Revisión cruzada del diagrama con Fabricio (DS) y Alexander (Frontend) | 0.25d | DA-03 | Sin observaciones pendientes |
 | ☐ | EX-07 | PPT resumen del Hito 2 (estructura + 2–3 slides por integrante) | 1d | EX-06 | PPT completo |
 | ☐ | EX-11 | Ensayo general de la demo en vivo (Vie 19) + reparto de quién muestra qué (con todos) | 0.5d | code freeze | Demo de ~15 min cronometrada |
@@ -58,10 +58,10 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 
 | ✔ | ID | Tarea | Est. | Depende de | DoD |
 |---|---|---|---|---|---|
-| ☐ | DA-05 | Export PNG del diagrama + insertar en informe y PPT | 0.25d | DA-04 | PNG en `informe/` y `ppt/` |
+| 🟡 | DA-05 | Export PNG del diagrama + insertar en informe y PPT | 0.25d | DA-04 | PNG en `informe/` y `ppt/` |
 | ☐ | EX-08 | Consolidación final del informe + revisión cruzada + export **PDF** | 1d | EX-06 | PDF final revisado por ≥2 personas |
-| ☐ | EX-09 | Verificar `INDEX.md` (todos los repos públicos y accesibles) | 0.25d | repos | Enlaces abren sin login |
-| ☐ | EX-10 | **Subida a Canvas** (informe PDF + PPT + enlaces) antes del Dom 20-Set 23:59 | 0.25d | EX-07/08/09 | Entrega confirmada |
+| ✅ | EX-09 | Verificar `INDEX.md` (todos los repos públicos y accesibles) | 0.25d | repos | Enlaces abren sin login |
+| ☐ | EX-10 | **Subida a Canvas** (informe PDF + PPT + enlaces) antes del Mar 23-Set 23:59 (aplazado) | 0.25d | EX-07/08/09 | Entrega confirmada |
 | ☐ | EX-12 | **Exposición presencial + demo** (con todos) | 0.5d | EX-11 | Realizada |
 
 ---
@@ -163,3 +163,101 @@ Fuentes: [backend.md](../backend.md) §3 y §9 · [data-science.md](../data-scie
 - `aeropuerto-infra-deploy/scripts/`: `user-data-*.sh`, `provision.sh` (aws-cli), `smoke-e2e.sh`
   (prueba de humo E2E), `backup-db.sh` / `restore-db.sh`.
 - **Pendiente:** correr `smoke-e2e.sh` contra la URL real (depende de BE-INT-06).
+
+### 🔴 Auditoría de avance real (2026-09-21, día de entrega Hito 2)
+
+Verificado contra el estado real de los 9 repos (no solo contra este checklist), sin sesión AWS activa:
+
+- ✅ **EX-09** — `INDEX.md` completado con las 9 URLs reales; confirmado que los 9 repos son
+  públicos (`gh api .../visibility` → `public` en los 9). Se corrigió además una inconsistencia:
+  el doc decía `ghcr.io/btoroled/<repo>`, el registro real que usan los 5 workflows es
+  `ghcr.io/cloud-mla/<repo>`.
+- 🔴 **Hallazgo crítico — registro de imágenes inconsistente:** `RUNBOOK.md` y
+  `compose/vm-prod/docker-compose.yml` asumen **Docker Hub público** (`btoroled/<repo>`), pero
+  ninguna imagen existe ahí (verificado con la API pública de Docker Hub, las 5 devuelven 404). Los
+  5 microservicios (`ms1`..`ms5`) todavía tienen el workflow `build-push-ghcr.yml` sin migrar —
+  publican a **GHCR**, no a Docker Hub. Hay un cambio a medias sin commitear en este repo
+  (`plantilla/github/workflows/build-push-ghcr.yml` → `build-push-dockerhub.yml`) que nunca se
+  aplicó a los 5 repos de MS. **Riesgo real: `docker compose pull` en VM-PROD puede fallar.**
+  Pendiente decidir un solo registro y propagarlo a los 5 repos + RUNBOOK + compose.
+- 🔴 Solo **MS4 y MS5** (Fabricio) tienen tag `v1.0`; MS1/MS2/MS3 no tienen ningún tag todavía
+  (solo push a `main`, que sí dispara `:latest` por el workflow).
+- 🔴 **DA-03/DA-04/DA-05** — no existe ningún `.drawio` ni PNG en `diagramas/`, solo el boceto
+  Mermaid (`arquitectura-solucion.md`). Diagrama final pendiente de verdad.
+- 🔴 `docs/evidencias/` prácticamente vacío (solo `README.md` y un `.gitkeep` en `athena/`).
+- 🔴 `informe/informe.tex` tiene **25 evidencias/figuras sin completar** (`\evidencia{...}` ×20,
+  `\figuraPendiente{...}` ×5) repartidas en las secciones de **todo el equipo**, no solo las mías —
+  necesita capturas/salidas reales de cada quien hoy mismo.
+- 🔴 No existe PPT de Hito 2 en `ppt/` (solo `avance-hito1.pptx`).
+- **No pude verificar infra en vivo** (VPC/EC2/ALB/API Gateway/S3) — token de AWS inválido, sesión
+  del Learner Lab no estaba activa al momento de esta auditoría.
+- 🔴 **VM-PROD pública por decisión temporal:** `terraform/ec2.tf` + `security_groups.tf` (editados
+  hoy) ponen las 2 VM-PROD en subred pública con IP pública y `sg-vm-prod` abierto a `0.0.0.0/0` en
+  80 y 8001–8005, para poder probar sin ALB/API Gateway mientras el registro de imágenes estaba roto.
+  **Decisión (2026-09-21):** se despliega así hoy para avanzar rápido; **hay que cerrar `sg-vm-prod`
+  (dejar solo `sg-alb`) y volver a subred privada antes de capturar la evidencia final** — si no, el
+  DoD de BE-INT-06 y el ítem "APIs públicas solo por API Gateway" del checklist quedan sin cumplir.
+  **No olvidar este paso al final.**
+
+### 🟡 DA-03 / DA-05 — diagrama de arquitectura v2 (2026-09-21)
+
+- Generado `diagramas/arquitectura-solucion.drawio` (editable, mxGraph/draw.io) y
+  `diagramas/arquitectura-solucion-v2.png` (export), con los nombres reales de recursos tomados de
+  `aeropuerto-infra-deploy/terraform/` (VPC `10.0.0.0/16`, 4 subredes, 5 SG, 4 EC2, ALB, VPC Link, API
+  Gateway) — no de un boceto a mano.
+- Incluye los 9 flujos pedidos por el DoD: carga del SPA, REST del browser a API Gateway, VPC Link → ALB
+  → VM-PROD×2, MS1→MS2/MS3→MS2/MS4→MS1‑2‑3 (consumo entre servicios), MS-DB por los 3 motores,
+  VM-INGESTA → VM-DB y → S3, S3 → Glue → Athena, MS5 → Athena (boto3), VM-PROD → GHCR vía NAT.
+- **Ya insertado en `informe/informe.tex` §Arquitectura de solución** (reemplacé el
+  `\figuraPendiente` por un `\includegraphics` real).
+- Dibuja el **estado objetivo** (VM-PROD privada, ver nota arriba sobre `sg-vm-prod` temporalmente
+  público) — si la infra real desplegada hoy termina distinta, hay que regenerarlo.
+- **Pendiente real:** DA-04 (revisión cruzada con Fabricio/Alexander) y confirmar contra la consola AWS
+  una vez desplegado; falta insertarlo también en el PPT del Hito 2 (EX-07, todavía no existe).
+
+### 🟢 Despliegue real de infra (2026-09-22) — cuenta AWS de Jobeth
+
+- **Cambio de cuenta:** el crédito de AWS Academy de Benja se agotó; el equipo despliega desde hoy en
+  la cuenta de **Jobeth** (`688609726830`). El Terraform nunca se había aplicado con éxito (no había
+  `.tfstate`) — se aplicó por primera vez hoy y se encontraron/corrigieron 3 bugs reales:
+  1. `security_groups.tf`: el `name` de un SG no puede empezar con `sg-` (reservado por AWS) — se
+     renombró a `aero-sg-*` manteniendo el tag `Name = sg-*` que usan el RUNBOOK y el diagrama.
+  2. Mismo archivo: `description` de los SG con em-dash/tildes — la API de EC2 solo acepta ASCII ahí.
+  3. `s3.tf`: el provider de AWS intenta leer `GetBucketObjectLockConfiguration` al gestionar
+     `aws_s3_bucket`, y una SCP de organización del Learner Lab lo deniega explícitamente — bloqueaba
+     el apply completo. Se sacó el bucket de Terraform (`terraform state rm`), se creó/completó por
+     CLI (bucket + public-access-block + 3 prefijos), y `s3.tf`/`outputs.tf` quedan documentando esto
+     para que no se repita.
+- ✅ **BE-INT-01** (VPC+SG), **BE-INT-02** (4 EC2, las 4 `Online` en SSM), **BE-INT-03** (VM-DB: mysql/
+  postgres/mongo `Up`/`healthy`, verificado por SSM), **BE-INT-05** (ALB interno creado, targets
+  registrados), **BE-INT-06** (API Gateway + VPC Link creados e integrados), **DS-04** (bucket +
+  prefijos).
+- 🔴 **BE-INT-04 sigue bloqueada:** VM-PROD no tiene ningún contenedor de MS corriendo — no hay
+  imágenes en Docker Hub todavía (confirmado por `docker compose ps` vacío en VM-PROD-1). Es el
+  bloqueante #1 ahora mismo; sigue con la migración del registro (ver entrada siguiente).
+- Outputs: API Gateway `https://0tmopxsjij.execute-api.us-east-1.amazonaws.com` · ALB interno
+  `internal-aeropuerto-alb-1804635082.us-east-1.elb.amazonaws.com` · VM-DB `10.0.10.170` · VM-INGESTA
+  `10.0.11.207` · VM-PROD `10.0.0.107`/`10.0.1.228` (privadas), con IP pública temporal
+  `3.85.35.12`/`34.201.13.75` mientras `sg-vm-prod` sigue abierto (ver nota arriba — cerrar al final).
+
+### 🟢 Registro migrado a Docker Hub + primer despliegue real de los 5 MS (2026-09-22)
+
+- Secrets `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` configurados en los 5 repos de microservicio; workflow
+  `build-push-ghcr.yml` reemplazado por `build-push-dockerhub.yml` (mismo patrón que la plantilla de
+  `aeropuerto-infra-deploy`) y pusheado a `main` de cada uno. Las 5 imágenes ya son públicas:
+  `btoroled/ms{1..5}-*:latest` (verificado con la API pública de Docker Hub, sin login).
+- `docker compose pull && up` corrido por SSM en **VM-PROD-1 y VM-PROD-2**: los 6 contenedores
+  (nginx + MS1..MS5) están `Up` en ambas.
+- ✅ **BE-INT-04 cerrada.** ✅ **BE-INT-05/06 verificadas de punta a punta:** los 2 targets del ALB
+  están `healthy`, y `curl https://0tmopxsjij.execute-api.us-east-1.amazonaws.com/api/pasajeros/health`
+  responde **200** desde internet — la cadena completa Internet→API Gateway→VPC Link→ALB→VM-PROD→nginx→MS1
+  funciona real, no solo en el papel.
+- Chequeo rápido de los otros 4 vía nginx local: MS3 (`/api/infra/health`) → 200 OK. MS2
+  (`/api/vuelos/actuator/health` y `/api/vuelos/`) → **500** con el JSON de error propio (el contenedor
+  se reporta `healthy` a nivel Docker, así que es un bug de la app de MS2, no de la infra/nginx —
+  **avisar a Mariano**). MS4/MS5 devuelven 422/404 en `/health` — probablemente esas rutas no existen
+  tal cual en sus apps (Fabricio debería confirmar el path real de cada uno para la evidencia del informe).
+- **VM-INGESTA sigue con el compose placeholder** (documentado en el propio archivo) — el pipeline real
+  de `aeropuerto-data-science/ingesta/` solo tiene `ingesta-ms1` hecho hoy; `ingesta-ms2`/`ingesta-ms3`
+  no existen todavía. Esto bloquea DS-06/07/08 y todo el camino crítico de Athena — **es lo más urgente
+  del lado de Data Science ahora mismo**, fuera del alcance de Benja.

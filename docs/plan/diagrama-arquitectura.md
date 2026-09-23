@@ -49,11 +49,16 @@ y el sentido de cada flecha; no hay servicios "fantasma" ni omitidos respecto al
 |---|---|---|---|---|---|---|
 | DA-01 | Boceto v0 con la topología planeada (guía para el equipo) | Benja | 0.5d | F0 | [arquitectura](../arquitectura.md) | PNG compartido en el repo docs |
 | DA-02 | v1 tras validar Learner Lab: fijar ALB vs NLB, Amplify vs CloudFront, VPC Link sí/no | Benja | 0.5d | F1 | [hallazgos Learner Lab](../aws-learner-lab-hallazgos.md) | Diagrama refleja las decisiones tomadas |
-| DA-03 | v2 final: nombres reales de recursos, todos los servicios usados, IDs de subred/SG | Benja | 0.5d | F2 | despliegue F2 | Coincide 1:1 con lo desplegado |
+| DA-03 | v2 final (`.drawio`): nombres reales de recursos, todos los servicios usados, IDs de subred/SG | 🔄 **Alexander** (reasignado, ver nota) | 0.5d | F2 | despliegue F2 | Coincide 1:1 con lo desplegado |
 | DA-04 | Revisión cruzada con Fabricio (DS) y Alexander (Frontend) | Benja + Fabricio + Alexander | 0.25d | F2 | DA-03 | Sin observaciones pendientes |
 | DA-05 | Export PNG + insertar en informe y PPT | Benja | 0.25d | F2/F3 | DA-04 | PNG en `informe/` y `ppt/` |
 
 **Carga total ≈ 2 d (Benja).**
+
+> **Nota (2026-09-12):** DA-03 (`.drawio` final) está en curso a cargo de **Alexander**, no de Benja —
+> Benja ya dejó una versión HTML/SVG de referencia con la misma data (v1/DA-02) en
+> `diagramas/arquitectura-solucion.html`. Cuando Alexander suba el `.drawio`, actualizar la fila DA-03 a
+> ✅ y ajustar DA-04/DA-05 si cambia el responsable del export PNG.
 
 ---
 

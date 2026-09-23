@@ -16,7 +16,7 @@ proyecto de Base de Datos I y descomponiéndolo en 5 microservicios sobre AWS.
 | Hito | Fecha | Qué se entrega |
 |---|---|---|
 | **Hito 1 — exposición virtual con ACL** | Sáb **12-Set** 23:59 | Avance ≥50% por parte + slides + demo corta |
-| **Hito 2 — entrega en Canvas** | Dom **20-Set** 23:59 | Informe (Word/PDF) + PPT + enlaces a repos |
+| **Hito 2 — entrega en Canvas** | Mar **23-Set** 23:59 (aplazado desde Dom 20-Set) | Informe (Word/PDF) + PPT + enlaces a repos |
 | **Exposición presencial + demo** | Semana 7 | Demo en vivo — **obligatoria** (si no, nota máx. 10) |
 
 ---
@@ -122,7 +122,7 @@ Lee en este orden:
 | **F0** Setup / contratos | Mié 2 – Vie 4 | `aws-learner-lab-hallazgos.md`, `contratos/enums.md`, `INDEX.md` (repos creados), `openapi.yaml` en cada repo de código |
 | **F1** Núcleo + deploy v1 | Sáb 6 – Sáb 12 | Marcar checklist Hito 1; primeras entradas de `docs/er/`; slides de avance |
 | **F2** Completar + endurecer | Sáb 13 – Vie 19 | `docs/evidencias/` (todo), `docs/er/` completo, `diagramas/` v2, redacción de `informe/` por secciones |
-| **F3** Entrega + exposición | Sáb 20 / Sem 7 | Informe consolidado a PDF, `ppt/` final, `INDEX.md` verificado, subida a Canvas |
+| **F3** Entrega + exposición | Mar 23-Set / Sem 7 | Informe consolidado a PDF, `ppt/` final, `INDEX.md` verificado, subida a Canvas |
 
 El **informe final no se escribe al final**: cada dev redacta su sección en F2 a medida que termina su
 componente y sube las evidencias. En F3 Benja solo consolida y exporta.
@@ -136,6 +136,6 @@ componente y sube las evidencias. En F3 Benja solo consolida y exporta.
 - **Enums idénticos** en los 3 servicios y en los archivos de ingesta (ver `contratos/enums.md`).
 - **IDs deterministas** para la data ficticia: orden de generación MS2 → MS1 → MS3, `SEED` fijo
   (ver [`docs/plan-de-trabajo.md`](docs/plan-de-trabajo.md) §3).
-- **Todo reproducible** ante el corte de sesión del Learner Lab: `docker compose` + imágenes en GHCR +
+- **Todo reproducible** ante el corte de sesión del Learner Lab: `docker compose` + imágenes en Docker Hub +
   `RUNBOOK.md`.
-- Repos de código: `main` protegida, `feature/*`, PR con 1 revisión, tag `vX.Y` publica imagen a GHCR.
+- Repos de código: `main` protegida, `feature/*`, PR con 1 revisión, tag `vX.Y` publica imagen a Docker Hub.

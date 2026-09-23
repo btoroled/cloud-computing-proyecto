@@ -37,6 +37,7 @@ Fuentes: [frontend.md](../frontend.md) · [backend.md](../backend.md) §3 (BE-TX
 | ☐ | FE-11 / BE-TX-07 | Página **Swagger-UI agregada** (lista los 5 `openapi.json` vía selector) | 0.5d | BE-TX-03 | `/docs` agregado navegable |
 | ☐ | FE-12 | Pulido: responsive, estados vacíos, mensajes de error de dependencia caída | 1d | FE-06..10 | Sin errores de consola; funciona en móvil |
 | ☐ | FE-13 | README + capturas para el informe (matriz de cobertura REST) | 0.5d | FE-12 | Sección de informe lista |
+| 🔄 | DA-03 | *(reasignado de Benja)* **Diagrama de arquitectura v2 final** `diagramas/arquitectura-solucion.drawio` — nombres reales de recursos, todos los servicios, IDs de subred/SG | 0.5d | despliegue F2 | Coincide 1:1 con lo desplegado ([contenido mínimo](../diagrama-arquitectura.md#3-contenido-mínimo-del-diagrama)) |
 | ☐ | DS-13 | *(reasignable)* **E/R del catálogo** `diagramas/er-catalogo-datalake.drawio` — con Fabricio | 1d | DS-09 | Diagrama entregado |
 | ☐ | EX-05/06 | Poblar `docs/evidencias/frontend/` + redactar tu sección del informe | 0.5d | verificación | Sección sin "TODO" |
 

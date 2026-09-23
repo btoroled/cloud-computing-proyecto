@@ -1,7 +1,7 @@
-# Hito 2 — Entrega completa (Dom 20-Set 23:59, Canvas) + exposición presencial (Semana 7)
+# Hito 2 — Entrega completa (Mar 23-Set 23:59, Canvas — aplazado desde Dom 20-Set) + exposición presencial (Semana 7)
 
 Todo lo que **falta** tras el Hito 1. Fase **F2** = completar + cargar 20k + endurecer (Sáb 13 – Vie 19),
-**F3** = entrega + exposición (Sáb 20 / Semana 7).
+**F3** = entrega + exposición (Mar 23-Set / Semana 7).
 
 Documentos base: [plan general §6](../plan-de-trabajo.md#6-checklist-hito-2--entregables-finales) ·
 [backend.md](backend.md) · [frontend.md](frontend.md) · [data-science.md](data-science.md) ·
@@ -212,7 +212,7 @@ del proyecto; empezar `seeds/` y `ingesta-ms1` cuanto antes.
 | Mié 17 | Athena Q1–Q5 + 2 vistas · MS5 endpoints · Frontend FE-09 |
 | Jue 18 | Dashboard FE-10 (MS5) · Swagger agregado (FE-11) · E/R MySQL/Postgres/Mongo · diagrama arquitectura |
 | Vie 19 | E2E (BE-INT-08) · verificación privacidad · pulido FE-12 · **code freeze** · consolidar informe + PPT · ensayo demo |
-| Sáb 20 | Buffer + subir a Canvas (informe + PPT + `INDEX.md`) |
+| Lun 21 | Buffer + subir a Canvas (informe + PPT + `INDEX.md`) — nueva fecha límite tras aplazamiento |
 
 ---
 

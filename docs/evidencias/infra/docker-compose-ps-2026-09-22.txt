@@ -1,0 +1,18 @@
+=== i-0cea6b7d864fd6c6d ===
+NAME                      IMAGE                                     COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+aeropuerto-prod-ms1-1     btoroled/ms1-pasajeros-api:latest         "./docker-entrypoint…"   ms1       3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:8001->8001/tcp, [::]:8001->8001/tcp
+aeropuerto-prod-ms2-1     btoroled/ms2-vuelos-api:latest            "sh -c 'java $JAVA_O…"   ms2       7 minutes ago   Up 6 minutes (healthy)   0.0.0.0:8002->8002/tcp, [::]:8002->8002/tcp
+aeropuerto-prod-ms3-1     btoroled/ms3-infraestructura-api:latest   "docker-entrypoint.s…"   ms3       7 minutes ago   Up 6 minutes (healthy)   3003/tcp, 0.0.0.0:8003->8003/tcp, [::]:8003->8003/tcp
+aeropuerto-prod-ms4-1     btoroled/ms4-manifiesto-api:latest        "uvicorn app.main:ap…"   ms4       7 minutes ago   Up 6 minutes (healthy)   0.0.0.0:8004->8004/tcp, [::]:8004->8004/tcp
+aeropuerto-prod-ms5-1     btoroled/ms5-analitica-api:latest         "uvicorn app.main:ap…"   ms5       7 minutes ago   Up 6 minutes (healthy)   0.0.0.0:8005->8005/tcp, [::]:8005->8005/tcp
+aeropuerto-prod-nginx-1   nginx:1.27-alpine                         "/docker-entrypoint.…"   nginx     3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:80->80/tcp, [::]:80->80/tcp
+
+=== i-0b90a6618bc811f58 ===
+NAME                      IMAGE                                     COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+aeropuerto-prod-ms1-1     btoroled/ms1-pasajeros-api:latest         "./docker-entrypoint…"   ms1       3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:8001->8001/tcp, [::]:8001->8001/tcp
+aeropuerto-prod-ms2-1     btoroled/ms2-vuelos-api:latest            "sh -c 'java $JAVA_O…"   ms2       7 minutes ago   Up 6 minutes (healthy)   0.0.0.0:8002->8002/tcp, [::]:8002->8002/tcp
+aeropuerto-prod-ms3-1     btoroled/ms3-infraestructura-api:latest   "docker-entrypoint.s…"   ms3       7 minutes ago   Up 6 minutes (healthy)   3003/tcp, 0.0.0.0:8003->8003/tcp, [::]:8003->8003/tcp
+aeropuerto-prod-ms4-1     btoroled/ms4-manifiesto-api:latest        "uvicorn app.main:ap…"   ms4       7 minutes ago   Up 6 minutes (healthy)   0.0.0.0:8004->8004/tcp, [::]:8004->8004/tcp
+aeropuerto-prod-ms5-1     btoroled/ms5-analitica-api:latest         "uvicorn app.main:ap…"   ms5       7 minutes ago   Up 6 minutes (healthy)   0.0.0.0:8005->8005/tcp, [::]:8005->8005/tcp
+aeropuerto-prod-nginx-1   nginx:1.27-alpine                         "/docker-entrypoint.…"   nginx     3 minutes ago   Up 3 minutes (healthy)   0.0.0.0:80->80/tcp, [::]:80->80/tcp
+

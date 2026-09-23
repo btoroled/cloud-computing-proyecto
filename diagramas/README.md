@@ -1,7 +1,15 @@
 # Diagrama de arquitectura de solución
 
 - [`arquitectura-solucion.md`](arquitectura-solucion.md) — **boceto v0** (Mermaid, DA-01). Se mantiene al día en F0/F1.
-- `arquitectura-solucion.drawio` + PNG — versión final para el informe (DA-03, Fase 2, dueño: Benja).
+- [`arquitectura-solucion.drawio`](arquitectura-solucion.drawio) + [`arquitectura-solucion-v2.png`](arquitectura-solucion-v2.png)
+  — **versión final (DA-03)**, generada el 2026-09-21 a partir de `aeropuerto-infra-deploy/terraform/` +
+  `RUNBOOK.md` (fuente de verdad de nombres de recursos/SG/subredes). Referenciada en
+  `informe/informe.tex` §"Arquitectura de solución". Abrir el `.drawio` en [app.diagrams.net](https://app.diagrams.net)
+  para editar.
+- **Muestra el estado objetivo** (VM-PROD sin IP pública, solo detrás del ALB — tras cerrar `sg-vm-prod`
+  en BE-INT-06). Si al desplegar hoy la infra real termina difiriendo (otros CIDR, otra AMI, SG
+  distintos), **regenerar antes de exportar el PDF final** — pendiente de **DA-04** (revisión cruzada
+  con Fabricio/Alexander) y confirmación con la consola AWS real.
 
 Debe incluir todos los servicios AWS de Backend + Frontend + Data Science.
 Ver la topología y la lista de servicios en [`../docs/arquitectura.md`](../docs/arquitectura.md).

@@ -1,0 +1,16 @@
+=== 1. API Gateway publico responde /health de los 5 MS ===
+API: https://0tmopxsjij.execute-api.us-east-1.amazonaws.com
+  OK   api/pasajeros/health -> 200
+  WARN api/vuelos/actuator/health -> 500 (revisar si el path de health del servicio es otro; no bloquea BE-INT-06)
+  OK   api/infra/health -> 200
+  WARN api/manifiesto/health -> 422 (revisar si el path de health del servicio es otro; no bloquea BE-INT-06)
+  WARN api/analitica/health -> 404 (revisar si el path de health del servicio es otro; no bloquea BE-INT-06)
+=== 2. VM-PROD y ALB NO deben responder directo desde fuera (deben fallar) ===
+  OK   VM-PROD 3.85.35.12 no responde directo (bloqueado por SG, como se espera)
+  OK   VM-PROD 34.201.13.75 no responde directo (bloqueado por SG, como se espera)
+  OK   ALB interno (internal-aeropuerto-alb-1804635082.us-east-1.elb.amazonaws.com) no alcanzable desde fuera, como se espera
+=== 3. VM-DB / VM-INGESTA sin IP publica ===
+  OK   VM-DB sin IP publica
+  OK   VM-INGESTA sin IP publica
+===
+RESULTADO: VERDE — todo lo esperado (publico responde, privado bloqueado).

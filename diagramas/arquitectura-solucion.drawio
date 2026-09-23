@@ -1,0 +1,127 @@
+<mxfile host="app.diagrams.net" agent="claude-code" version="24.0.0">
+  <diagram id="arq-aeropuerto-v2" name="Arquitectura de solucion v2">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Actores externos -->
+        <mxCell id="usuario" value="Usuario&#10;navegador" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1a1a2e;" vertex="1" parent="1">
+          <mxGeometry x="30" y="50" width="190" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="amplify" value="AWS Amplify&#10;Frontend SPA (React)&#10;4 vistas + Swagger-UI agregada" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="150" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="apigw" value="Amazon API Gateway (HTTP API)&#10;unica entrada publica - HTTPS&#10;ruta ANY /{proxy+} - stage $default" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="650" y="50" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-usr-amplify" value="carga SPA (HTTPS)" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="usuario" target="amplify">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-usr-apigw" value="fetch REST - 5 MS, >=2 metodos c/u (HTTPS)" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="usuario" target="apigw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- VPC boundary -->
+        <mxCell id="vpc" value="VPC &quot;aeropuerto&quot; - 10.0.0.0/16 (us-east-1)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;dashed=1;strokeColor=#3b6fa8;fillColor=none;fontColor=#3b6fa8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="230" y="250" width="1150" height="640" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vpclink" value="VPC Link&#10;sg-apigw-vpclink (sin inbound)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;" vertex="1" parent="1">
+          <mxGeometry x="640" y="290" width="220" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="e-apigw-vpclink" value="integracion privada" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="apigw" target="vpclink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pubsubnet" value="Subredes publicas (10.0.0.0/24, 10.0.1.0/24)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;fillColor=#eaf3ff;strokeColor=#3b6fa8;" vertex="1" parent="1">
+          <mxGeometry x="250" y="290" width="330" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="igw" value="Internet Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3b6fa8;" vertex="1" parent="1">
+          <mxGeometry x="270" y="325" width="130" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="nat" value="NAT Gateway&#10;1 AZ (public1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3b6fa8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="325" width="140" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="alb" value="ALB interno&#10;sg-alb - tg-vm-prod :80" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;" vertex="1" parent="1">
+          <mxGeometry x="640" y="382" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vpclink-alb" style="html=1;endArrow=block;" edge="1" parent="1" source="vpclink" target="alb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Subred privada 1a -->
+        <mxCell id="priv1a" value="Subred privada 1a (10.0.10.0/24)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;fillColor=#f2f2f6;strokeColor=#6b6b7a;" vertex="1" parent="1">
+          <mxGeometry x="250" y="470" width="540" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="vmprod1" value="VM-PROD-1&#10;t3.small - sg-vm-prod&#10;nginx (reverse proxy /api/*)&#10;MS1 . MS2 . MS3 . MS4 . MS5&#10;(Python + Java + Node)&#10;MS1-&gt;MS2 valida vuelo&#10;MS3-&gt;MS2 valida vuelo&#10;MS4-&gt;MS1/MS2/MS3 manifiesto&#10;MS5-&gt;Athena (boto3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2f7a3d;strokeWidth=1.5;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="270" y="505" width="230" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="vmdb" value="VM-DB&#10;t3.medium - sg-vm-db&#10;&#10;MySQL 8 - pasajeros/ticket&#10;PostgreSQL 16 - vuelos/asiento&#10;MongoDB 7 - incidencias&#10;&#10;solo alcanzable desde&#10;sg-vm-prod y sg-vm-ingesta&#10;>=20000 filas/tabla" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8b3fa8;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="530" y="505" width="250" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e-alb-vmprod1" style="html=1;endArrow=block;" edge="1" parent="1" source="alb" target="vmprod1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vmprod1-vmdb" value="3306/5432/27017" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="vmprod1" target="vmdb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Subred privada 1b -->
+        <mxCell id="priv1b" value="Subred privada 1b (10.0.11.0/24)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;fillColor=#f2f2f6;strokeColor=#6b6b7a;" vertex="1" parent="1">
+          <mxGeometry x="810" y="470" width="550" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="vmprod2" value="VM-PROD-2&#10;t3.small - sg-vm-prod&#10;nginx (reverse proxy /api/*)&#10;MS1 . MS2 . MS3 . MS4 . MS5&#10;replica de VM-PROD-1&#10;(sin estado compartido)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2f7a3d;strokeWidth=1.5;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="830" y="505" width="230" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="vmingesta" value="VM-INGESTA&#10;t3.small - sg-vm-ingesta&#10;&#10;ingesta-ms1 . ingesta-ms2&#10;ingesta-ms3 (con aplanado)&#10;3 contenedores, pull 100%&#10;CSV -&gt; S3 raw/ms{1,2,3}/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#a85f10;strokeWidth=1.5;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="505" width="250" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e-alb-vmprod2" value="round-robin :80" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="alb" target="vmprod2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ingesta-vmdb" value="lee VM-DB (solo lectura)" style="html=1;endArrow=block;dashed=1;strokeColor=#8a8a99;fontSize=10;" edge="1" parent="1" source="vmingesta" target="vmdb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Data lake / analitica (fuera de la VPC) -->
+        <mxCell id="s3" value="Amazon S3&#10;mla-aeropuerto-lake&#10;raw/ . athena-results/ . backups/&#10;bloqueado a publico" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="260" y="930" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="glue" value="AWS Glue&#10;DB aeropuerto_lake&#10;1 crawler por raw/msX/&#10;IAM: LabRole" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="540" y="930" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="athena" value="Amazon Athena&#10;Q1-Q5 con JOIN + 2 vistas&#10;workgroup - output S3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#c97a12;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="820" y="930" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ghcr" value="GHCR&#10;ghcr.io/cloud-mla/*&#10;registro de imagenes (externo a AWS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef0ff;strokeColor=#4a4ab0;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="930" width="230" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-ingesta-s3" value="PUT CSV - pull 100% (una vez, >=20k/tabla)" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="vmingesta" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-s3-glue" value="crawler" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="s3" target="glue">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-glue-athena" value="catalogo" style="html=1;endArrow=block;fontSize=10;" edge="1" parent="1" source="glue" target="athena">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vmprod1-athena" value="MS5 -&gt; boto3 query (Q1-Q5)" style="html=1;endArrow=block;dashed=1;strokeColor=#7a2f8b;fontSize=10;" edge="1" parent="1" source="vmprod1" target="athena">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-nat-ghcr" value="VM-PROD: docker pull vX.Y (via NAT)" style="html=1;endArrow=block;dashed=1;strokeColor=#4a4ab0;fontSize=10;" edge="1" parent="1" source="nat" target="ghcr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Nota -->
+        <mxCell id="nota" value="Estado objetivo tras cerrar sg-vm-prod (BE-INT-06): API Gateway es la unica entrada publica; VM-PROD sin IP publica, solo detras del ALB interno.&#10;Fuente: aeropuerto-infra-deploy/terraform/ + RUNBOOK.md. Ver nota de despliegue temporal en docs/plan/personas/benja.md." style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1050" width="1300" height="50" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

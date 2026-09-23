@@ -7,8 +7,8 @@ Documentos relacionados: [requerimientos](requerimientos.md) · [arquitectura](a
 
 **Equipo:** 6 integrantes — 1 lead dev / arquitecto de solución (Benja) + 5 devs del mismo nivel.
 **Entorno AWS:** AWS Academy Learner Lab.
-**Fechas (2026):** hoy Mié 2-Set · **Hito 1 (ACL)** Sáb 12-Set 23:59 · **Hito 2 (Canvas)** Dom 20-Set
-23:59 · **Exposición presencial** Semana 7.
+**Fechas (2026):** hoy Mié 2-Set · **Hito 1 (ACL)** Sáb 12-Set 23:59 · **Hito 2 (Canvas)** Mar 23-Set
+23:59 (aplazado desde Dom 20-Set) · **Exposición presencial** Semana 7.
 
 ---
 
@@ -27,7 +27,7 @@ Documentos relacionados: [requerimientos](requerimientos.md) · [arquitectura](a
 | `aeropuerto-infra-deploy` | Terraform/scripts de VPC+EC2+SG, `compose` de VM-PROD y VM-DB, `nginx.conf`, config API Gateway + VPC Link, `RUNBOOK.md` | Benja |
 
 Convenciones: rama `main` protegida, trabajo por `feature/*`, PR con 1 revisión. Tag `vX.Y` dispara
-build de imagen a GHCR. `LICENSE` MIT + `README` en todos.
+build de imagen a Docker Hub. `LICENSE` MIT + `README` en todos.
 
 ---
 
@@ -68,7 +68,7 @@ Tablas objetivo para el volumen ≥20 000: `ticket` / `equipaje` (MySQL), `vuelo
 
 ---
 
-## 4. Cronograma (Mié 2-Set → Dom 20-Set; presencial Semana 7)
+## 4. Cronograma (Mié 2-Set → Mar 23-Set; presencial Semana 7)
 
 ### Fase 0 — Setup y contratos · Mié 2 – Vie 4
 - **Benja:** crear org GitHub + los 9 repos con plantilla; invitar al equipo. Iniciar Learner Lab y
@@ -108,8 +108,8 @@ Tablas objetivo para el volumen ≥20 000: `ticket` / `equipaje` (MySQL), `vuelo
   **informe + PPT** con evidencias de cada equipo.
 - **Vie 19:** *code freeze* + ensayo de demo.
 
-### Fase 3 — Entrega y exposición · Sáb 20 / Semana 7
-- **Dom 20-Set 23:59 — Hito 2:** subir a Canvas el **informe (Word/PDF)** + **PPT** + `INDEX.md` con
+### Fase 3 — Entrega y exposición · Mar 23-Set / Semana 7
+- **Mar 23-Set 23:59 — Hito 2** (aplazado desde Dom 20-Set): subir a Canvas el **informe (Word/PDF)** + **PPT** + `INDEX.md` con
   enlaces a los repos públicos.
 - **Semana 7:** **exposición presencial + demo en vivo** (obligatoria).
 
