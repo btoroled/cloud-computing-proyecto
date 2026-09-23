@@ -1,5 +1,7 @@
 # Informe final
 
+- [`latex/README.md`](latex/README.md) — plantilla colaborativa en LaTeX, con portada, índice, nueve secciones y anexo. Documento principal: `latex/main.tex`.
+
 Informe en Word/PDF con evidencia de todo lo solicitado (Hito 2, Dom 20-Set).
 Se arma consolidando las evidencias de `../docs/evidencias/` y los diagramas.
 
