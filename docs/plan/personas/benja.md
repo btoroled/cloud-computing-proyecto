@@ -259,9 +259,26 @@ Verificado contra el estado real de los 9 repos (no solo contra este checklist),
   repos, conclusiones), con el estado real de hoy (no aspiracional) y la evidencia recolectada en esta
   sesión. El equipo puede seguir editándolo directamente.
 
+### 🟢 ingesta-ms3 construido y las 5 queries de Athena ya funcionan (2026-09-23)
+
+- Ante la falta de tiempo, construí `ingesta-ms3` yo mismo adaptando el aplanado de referencia que
+  **ya había escrito Fabricio** (`athena/local-postgres/aplanar_ms3.py`, explícitamente marcado como
+  "esto lo hará ingesta-ms3 en F2") — no fue inventar lógica de negocio nueva, fue conectar 2 piezas
+  que ya existían: su generador de seed (`seeds/generators/ms3_infra.py`) + su aplanado, adaptado para
+  leer de una MongoDB real en vez de JSONL local.
+- Cargado en MongoDB real: 500 recursos, **25 000 incidencias**, 40 000 asignaciones (`mongoimport`,
+  verificado con `countDocuments()` independiente).
+- `ingesta-ms3` corrido de verdad: 5 archivos en `s3://mla-aeropuerto-lake/raw/ms3/` con datos reales.
+- Encontré y arreglé un bug real en el camino (DS-10): el SerDe simple de Glue no soporta comillas CSV
+  — una coma dentro del texto libre de `descripcion` corrompía las columnas siguientes. Arreglado
+  saneando la coma en el origen, no cambiando el SerDe (para no romper el tipado del resto).
+- **Resultado: las 5 consultas de Athena (Q1-Q5) y las 2 vistas ya funcionan con datos reales de las
+  3 fuentes.** Catálogo Glue con 19 tablas. Evidencia completa en `docs/evidencias/athena/`.
+- Avisarle a Edinson: su trabajo de generador/aplanado era correcto y se usó tal cual — solo faltaba
+  conectarlo a una MongoDB real, que es justo el paso donde estaba trabado por tiempo.
+
 ### Lo que sigue bloqueado y no es mío para resolver solo
 
-- **`ingesta-ms3` / seed de `incidencias`** — Edinson. Bloquea Q1, Q3, y el 3er tercio de DS-09/DS-15.
 - **Amplify** — pendiente que Jobeth lo despliegue desde la consola web (instrucciones ya enviadas);
   si también falla ahí, activar contingencia S3+CloudFront (R1).
 - **DA-04** — revisión cruzada del diagrama con Fabricio y Alexander (necesita su input, no solo el mío).
