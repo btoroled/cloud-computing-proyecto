@@ -277,6 +277,35 @@ Verificado contra el estado real de los 9 repos (no solo contra este checklist),
 - Avisarle a Edinson: su trabajo de generador/aplanado era correcto y se usó tal cual — solo faltaba
   conectarlo a una MongoDB real, que es justo el paso donde estaba trabado por tiempo.
 
+### 🔴 Revisión de riesgos (2026-09-23) — qué puede salir mal antes de la entrega/demo
+
+- **`terraform/ec2.tf` y `variables.tf` NO reflejan lo realmente desplegado.** Tienen 161+56 líneas de
+  cambios sin commitear desde antes de esta sesión (no son míos). Si alguien clona el repo y corre
+  `terraform apply` desde cero, **no reproduce la infra actual** — riesgo real para el punto de la
+  rúbrica de "infra reproducible por Terraform". Pendiente: revisar y commitear esos 2 archivos.
+- **El `.tfstate` de Terraform solo existe en mi máquina** (correctamente en `.gitignore`, pero no hay
+  backend remoto). Si otra persona necesita tocar la infra por Terraform, no tiene el state — quedaría
+  desincronizado o intentaría recrear recursos que ya existen. Considerar backend S3 si el equipo va a
+  seguir iterando la infra.
+- **VM-PROD sigue con IP pública asignada** (aunque bloqueada por `sg-vm-prod`). Si alguien revierte el
+  commit de hoy o reabre el SG por error, vuelve a quedar expuesta al toque. Un grader que mire la
+  consola EC2 (no solo pruebe conectividad) podría notar la IP pública igual, aunque inalcanzable.
+- **Swagger roto para 3 de 5 servicios — arreglado parcialmente hoy:** MS1 y MS2 ya funcionaban; MS4 y
+  MS5 los arreglé (nginx no les recortaba el prefijo, mismo patrón que el actuator de MS2). **MS3 no
+  tiene Swagger/OpenAPI implementado en el código todavía** — no es un bug de ruteo, falta agregarlo
+  en la app (Edinson). Esto amenaza directamente el ítem "Swagger-UI navegable de las 5 APIs".
+- **Evidencia de consumo MS1→MS2 y MS4→MS1/2/3 no capturada explícitamente** (solo MS3→MS2 tiene log
+  guardado) — el código y los endpoints existen, falta la captura antes del PDF final.
+- **Reinicio tras corte de sesión sigue sin cronometrarse** — el RUNBOOK lo documenta pero nunca se
+  probó un corte real con la infra de hoy. Riesgo para la exposición de Semana 7 si el Lab se corta
+  a mitad de la demo y nadie sabe cuánto tarda en verdad volver a levantar todo.
+- **La sesión de AWS de Jobeth expira cada ~4h** y hay que pedirle credenciales nuevas cada vez — esto
+  va a repetirse en la exposición de Semana 7; alguien del equipo (idealmente Jobeth) debe tener el
+  Learner Lab abierto y listo antes de esa sesión, no durante.
+- **Datos reales respaldados** (2026-09-23, post carga de MS1/MS2/MS3): `backups/mysql-20260923-0645.sql`
+  (10.9MB), `pg-20260923-0645.sql` (2.9MB), `mongo-20260923-0645.archive` (11.1MB) — si el Lab corta
+  sesión y se pierde el volumen de VM-DB, se puede restaurar desde ahí sin volver a correr los seeds.
+
 ### Lo que sigue bloqueado y no es mío para resolver solo
 
 - **Amplify** — pendiente que Jobeth lo despliegue desde la consola web (instrucciones ya enviadas);
