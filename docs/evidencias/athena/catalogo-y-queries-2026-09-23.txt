@@ -1,0 +1,53 @@
+Evidencia: catalogo Glue + consultas/vistas Athena reales
+Fecha: 2026-09-23
+
+=== Glue: aws s3 ls ===
+aws s3 ls s3://mla-aeropuerto-lake/
+                           PRE athena-results/
+                           PRE backups/
+                           PRE deploy/
+                           PRE raw/
+
+=== Glue: base de datos + crawlers ===
+Database: aeropuerto_lake
+Crawlers: aeropuerto-crawler-ms1, aeropuerto-crawler-ms2, aeropuerto-crawler-ms3 (role: LabRole)
+aeropuerto-crawler-ms3 no encontro archivos (raw/ms3/ vacio, bloqueado en Edinson)
+
+=== Glue: tablas catalogadas (14) ===
+aerolinea, aeronave, asiento, categoria_migratoria, checkin, empleado, equipaje,
+opera_tripulacion, operativo_tierra, pasajero, persona, ticket, tripulacion, vuelo
+
+=== Athena: SELECT COUNT(*) FROM vuelo (sanity check) ===
+20500
+
+=== Athena: Q2 (retraso promedio) - GLOBAL ===
+vuelos=2580, retraso_promedio_min=25.07, p50=25.26, p90=53.25, p99=59.23
+
+=== Athena: Q4 (recaudacion TUUA por categoria) ===
+Internacional: 4507 pasajeros, S/173,294.15 (61.37%)
+Nacional:      7818 pasajeros, S/97,725.00  (34.61%)
+Transito:       630 pasajeros, S/11,340.00   (4.02%)
+
+=== Athena: Q5 (vuelos hora punta retrasados) - muestra ===
+HORA PUNTA (06-09h) Internacional: 1271 vuelos, 331 retrasados (26.04%)
+HORA PUNTA (06-09h) Nacional:      1212 vuelos, 321 retrasados (26.49%)
+HORA PUNTA (18-21h) Internacional: 1232 vuelos, 343 retrasados (27.84%)
+
+=== Fix aplicado (DS-10): esquema inferido por el crawler ===
+El crawler infiere hora_programada/hora_real como STRING (formato real:
+"2026-09-30 06:15:00+00:00", ISO 8601 con offset). Q2 y Q5 originales usaban
+date_diff()/EXTRACT() directo sobre esas columnas y fallaban:
+  FUNCTION_NOT_FOUND / TYPE_MISMATCH: Cannot extract HOUR from varchar
+Fix: envolver con from_iso8601_timestamp(replace(col, ' ', 'T')) en vez de cambiar
+el tipo de columna en el catalogo (evita problemas de parseo del SerDe con el offset).
+Aplicado en q2_retraso_promedio.sql, q5_vuelos_hora_punta_retrasados.sql y
+vw_retrasos_hora_punta.sql (aeropuerto-data-science).
+
+=== Athena: SHOW VIEWS IN aeropuerto_lake ===
+vw_recaudacion_tuua
+vw_retrasos_hora_punta
+
+=== Consultas pendientes ===
+Q1 (recursos con mas fallas) y Q3 (incidencias de combustible) necesitan la tabla
+`incidencia` de MS3 (MongoDB) -- bloqueadas hasta que exista el seed/ingesta de Edinson.
+3 de 5 consultas + 2 de 2 vistas ya funcionan con datos reales de MS1+MS2.

@@ -138,10 +138,10 @@ Hecho en Hito 1: bucket S3 + VM-INGESTA + `ingesta-ms3` con datos en S3. Falta:
 | DS-06 | **`ingesta-ms1`** (MySQL → CSV → `raw/ms1/`, 6 tablas, pull 100%) | Guillermo | Archivos de las 6 tablas en S3 |
 | DS-07 | **`ingesta-ms2`** (PostgreSQL → CSV → `raw/ms2/`, 8 tablas, pull 100%) | Mariano | Archivos de las 8 tablas en S3 |
 | DS-08 | **`ingesta-ms3`** completa: leer colecciones + **aplanar `incidencias`** en `incidencia` / `incidencia_recurso` / `incidencia_vuelo` → `raw/ms3/` | Edinson | 5 archivos en S3; conteos cuadran |
-| DS-09 | Glue: database `aeropuerto_lake` + **1 crawler por prefijo** `raw/msX/` | Fabricio | Tablas visibles en el catálogo |
-| DS-10 | Ajuste de esquemas inferidos por el crawler (tipos, `timestamp`, columnas) | Fabricio | `SELECT * LIMIT 10` correcto por tabla |
-| DS-11 | Implementar **Q1–Q5 en Athena** (workgroup + output S3) — ver [data-science §4](data-science.md#4-consultas-athena-las-5-que-respaldan-ms5) | Fabricio | Las 5 corren, hacen JOIN y devuelven filas |
-| DS-12 | Crear las **2 vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Fabricio | `SHOW VIEWS` las lista; DDL en `athena/` |
+| DS-09 | Glue: database `aeropuerto_lake` + **1 crawler por prefijo** `raw/msX/` | Fabricio | ✅ 2026-09-23 (corrido por Benja): 14 tablas de MS1+MS2 en el catálogo; crawler de MS3 corrido pero sin datos (raw/ms3/ vacío) |
+| DS-10 | Ajuste de esquemas inferidos por el crawler (tipos, `timestamp`, columnas) | Fabricio | ✅ `hora_programada`/`hora_real` llegan como varchar ISO8601+offset — arreglado con `from_iso8601_timestamp()` en las queries en vez de forzar el tipo de columna |
+| DS-11 | Implementar **Q1–Q5 en Athena** (workgroup + output S3) — ver [data-science §4](data-science.md#4-consultas-athena-las-5-que-respaldan-ms5) | Fabricio | 🟡 **3 de 5** (Q2, Q4, Q5) corren y devuelven filas reales — evidencia en `docs/evidencias/athena/`. Q1/Q3 necesitan `incidencia` (MS3), bloqueadas |
+| DS-12 | Crear las **2 vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Fabricio | ✅ Las 2 creadas y confirmadas con `SHOW VIEWS IN aeropuerto_lake` |
 | DS-13 | **E/R del catálogo** (`diagramas/er-catalogo-datalake.drawio`) con todas las tablas + claves de join | Fabricio / Alexander | Diagrama entregado |
 | DS-14 | Evidencias en `docs/evidencias/athena/` (5 queries + 2 vistas + `aws s3 ls` + Glue console) | Fabricio | Carpeta completa |
 | DS-15 | **Carga masiva real:** ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Guillermo/Mariano/Edinson | **MS1+MS2 completo** (`raw/ms1/`, `raw/ms2/` con datos reales, 2026-09-23) · **MS3 pendiente** (bloqueado: sin seed/ingesta de Edinson) |
