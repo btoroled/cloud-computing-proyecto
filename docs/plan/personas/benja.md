@@ -215,6 +215,21 @@ Verificado contra el estado real de los 9 repos (no solo contra este checklist),
 - **Pendiente real:** DA-04 (revisión cruzada con Fabricio/Alexander) y confirmar contra la consola AWS
   una vez desplegado; falta insertarlo también en el PPT del Hito 2 (EX-07, todavía no existe).
 
+### 🟢 ingesta-ms1 / ingesta-ms2 desplegados y corridos en VM-INGESTA (2026-09-23)
+
+- Empaqueté el código de Guillermo (`ingesta-ms1`) y Mariano (`ingesta-ms2`) desde
+  `aeropuerto-data-science/ingesta/`, lo subí a S3 y lo desplegué en VM-INGESTA (reemplazando mi
+  placeholder). Construí las 2 imágenes reales con `docker compose build` y las corrí de verdad
+  (`docker compose run --rm`), apuntando a la VM-DB real con las credenciales del `terraform.tfvars`.
+- **Pipeline confirmado funcional de punta a punta:** conecta a MySQL/PostgreSQL reales, extrae las
+  tablas, sube a `s3://mla-aeropuerto-lake/raw/ms{1,2}/`. Evidencia: `raw/ms2/*/2026-09-23/*.csv` en S3.
+- **0 filas porque la VM-DB de hoy está vacía** — Guillermo/Mariano ya habían cargado 20k contra sus
+  propios entornos (locales o la cuenta AWS vieja de Benja), pero no contra esta infra nueva. **Falta
+  que ellos recarguen sus seeds contra `DB_HOST=10.0.10.170`** (o me pasan el comando y lo corro yo).
+- `ingesta-ms3` sigue sin existir (bloqueado en Edinson) — es el único de los 3 que falta.
+- Nota menor: el script de Guillermo salta el upload cuando una tabla tiene 0 filas; el de Mariano sube
+  igual un CSV vacío (solo encabezado). No es un bug, solo una diferencia de criterio entre ambos.
+
 ### 🟢 Despliegue real de infra (2026-09-22) — cuenta AWS de Jobeth
 
 - **Cambio de cuenta:** el crédito de AWS Academy de Benja se agotó; el equipo despliega desde hoy en
