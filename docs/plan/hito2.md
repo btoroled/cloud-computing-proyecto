@@ -99,7 +99,8 @@ ejecución Athena (poll + cache TTL) → 5 endpoints `GET /analitica/*` (Q1–Q5
 ### 2.8 Consumo entre microservicios (evidencia obligatoria)
 
 - [ ] **MS1 → MS2** en `POST /tickets` (valida vuelo con `GET /vuelos/{id}/exists`) — log de la llamada saliente
-- [ ] **MS3 → MS2** en `POST /incidencias` — log de la llamada saliente
+- [x] **MS3 → MS2** en `POST /incidencias` — log de la llamada saliente. Verificado 2026-09-23:
+  `docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt` (llamada real, no mock)
 - [ ] **MS4 → MS1/MS2/MS3** en `GET /manifiesto/{vuelo_id}` — respuesta consolidada
 
 ---
