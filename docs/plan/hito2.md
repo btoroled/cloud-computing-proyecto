@@ -20,7 +20,8 @@ Documentos base: [plan general §6](../plan-de-trabajo.md#6-checklist-hito-2--en
   `incidencias` (MongoDB): **25 000** ✅ (2026-09-23, seed de Fabricio + `ingesta-ms3` construido hoy).
   Evidencia `COUNT(*)`: `docs/evidencias/backend/ms{1,2,3}-count-2026-09-23.txt`
 - [x] Despliegue `docker compose` en **2 VM-PROD** + **ALB privado**; APIs públicas **solo** por **API Gateway HTTPS**; **3 BD en VM privada** sin IP pública — verificado con `curl`/`nc` reales (`docs/evidencias/infra/`)
-- [ ] **Swagger-UI** navegable de las 5 APIs + página agregada
+- [x] **Swagger-UI** navegable de las 5 APIs (verificado 200 vía gateway en las 5, 2026-09-23) —
+  falta la **página agregada** (BE-TX-07/FE-11, de Alexander)
 - [ ] **Frontend en Amplify** con **4 vistas** consumiendo **los 5 microservicios**, **≥2 métodos REST c/u** — pendiente confirmación de Alexander/Jobeth (Amplify bloqueado por política en la cuenta actual, ver nota en README)
 - [x] **Data Science:** bucket S3 ✅ + **3 contenedores de ingesta (pull 100%)** ✅ (ms1/ms2/ms3, todos reales) +
   **catálogo Glue** ✅ (19 tablas, `aeropuerto_lake`) + E/R del catálogo (borrador, falta DA-04) +

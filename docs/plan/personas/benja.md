@@ -290,10 +290,17 @@ Verificado contra el estado real de los 9 repos (no solo contra este checklist),
 - **VM-PROD sigue con IP pública asignada** (aunque bloqueada por `sg-vm-prod`). Si alguien revierte el
   commit de hoy o reabre el SG por error, vuelve a quedar expuesta al toque. Un grader que mire la
   consola EC2 (no solo pruebe conectividad) podría notar la IP pública igual, aunque inalcanzable.
-- **Swagger roto para 3 de 5 servicios — arreglado parcialmente hoy:** MS1 y MS2 ya funcionaban; MS4 y
-  MS5 los arreglé (nginx no les recortaba el prefijo, mismo patrón que el actuator de MS2). **MS3 no
-  tiene Swagger/OpenAPI implementado en el código todavía** — no es un bug de ruteo, falta agregarlo
-  en la app (Edinson). Esto amenaza directamente el ítem "Swagger-UI navegable de las 5 APIs".
+- ✅ **Swagger arreglado en las 5 APIs** — MS1/MS2 ya funcionaban; arreglé el ruteo de nginx para MS4/MS5
+  (no le recortaba el prefijo, mismo patrón que el actuator de MS2); y a **MS3 le agregué Swagger desde
+  cero** (no existía en el código — spec OpenAPI 3.0 escrito a mano con `swagger-ui-express`, a partir
+  de las rutas y schemas Ajv reales). Los 5 verificados 200 vía gateway el 23-Set. Item "Swagger-UI
+  navegable de las 5 APIs" cerrado; falta solo la página agregada (de Alexander).
+- 🟡 **`terraform/ec2.tf` y `variables.tf` ya commiteados** (2026-09-23) — ya no hay drift entre lo
+  desplegado y el repo. Sigue pendiente: backend remoto del `.tfstate` si el equipo va a seguir
+  iterando la infra desde otra máquina.
+- 🟢 **Script de reactivación creado y probado:** `scripts/reactivar-sesion.sh` automatiza el RUNBOOK
+  Parte 2 (arranca las 4 EC2, levanta `docker compose` en VM-DB/VM-PROD, espera el ALB, prueba API
+  Gateway). Corrido hoy en modo `--check`: 4/4 instancias, 2/2 targets healthy, API Gateway 200.
 - **Evidencia de consumo MS1→MS2 y MS4→MS1/2/3 no capturada explícitamente** (solo MS3→MS2 tiene log
   guardado) — el código y los endpoints existen, falta la captura antes del PDF final.
 - **Reinicio tras corte de sesión sigue sin cronometrarse** — el RUNBOOK lo documenta pero nunca se
