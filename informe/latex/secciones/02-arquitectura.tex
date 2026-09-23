@@ -1,10 +1,54 @@
 \section{Arquitectura de solución}
 \textit{Responsable: Benjamín.}
 
-\pendiente{Describir los servicios AWS realmente utilizados, las capas y los flujos de operación, persistencia e ingesta. Incorporar el diagrama de arquitectura y justificar las decisiones del Learner Lab.}
+La solución corre sobre una única VPC (\texttt{aeropuerto}, \texttt{10.0.0.0/16}) en la cuenta de AWS
+Academy Learner Lab del equipo, con 2 subredes públicas y 2 privadas en dos zonas de disponibilidad.
+Amazon API Gateway es la única puerta de entrada pública de las APIs: recibe las peticiones por HTTPS,
+las cruza mediante un VPC Link hacia un Application Load Balancer interno, y este balancea entre dos
+instancias EC2 idénticas (VM-PROD-1 y VM-PROD-2) que corren \texttt{nginx} como reverse proxy delante
+de los 5 microservicios. Una tercera instancia (VM-DB), en subred privada y sin IP pública, aloja los
+tres motores de base de datos (MySQL 8, PostgreSQL 16, MongoDB 7); una cuarta (VM-INGESTA) ejecuta los
+contenedores que copian los datos operacionales hacia el data lake en S3. La única salida a Internet
+desde las subredes privadas es un NAT Gateway, usado para descargar las imágenes de los microservicios.
 
 \subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+
+El registro de imágenes es \textbf{Docker Hub} (\texttt{btoroled/<repo>}), no GHCR: se migró el
+22-Set-2026 porque los paquetes de GitHub Container Registry quedaban con visibilidad privada por
+defecto, lo que rompía el \texttt{docker compose pull} anónimo en VM-PROD. Las imágenes se publican
+automáticamente por GitHub Actions al hacer push a \texttt{main} o al crear un tag \texttt{vX.Y}.
+
+El despliegue de infraestructura es reproducible por Terraform (\texttt{aeropuerto-infra-deploy/terraform/}):
+VPC, subredes, 5 Security Groups, 4 EC2, el ALB y el API Gateway con su VPC Link se crean con
+\texttt{terraform apply}. La única excepción es el bucket S3 del data lake, gestionado por AWS CLI en
+vez de Terraform: el proveedor de Terraform intenta leer la configuración de Object Lock del bucket en
+cada \texttt{plan}/\texttt{apply}, y una Service Control Policy de la organización del Learner Lab
+deniega esa llamada explícitamente, lo que bloqueaba el \texttt{apply} completo.
+
+Por seguridad, \texttt{sg-vm-prod} solo acepta tráfico del Security Group del ALB (\texttt{sg-alb}) —
+las VM-PROD no tienen ningún puerto abierto a \texttt{0.0.0.0/0}, así que el único camino público hacia
+las APIs es API Gateway. \texttt{sg-vm-db} solo acepta conexión desde \texttt{sg-vm-prod} y
+\texttt{sg-vm-ingesta}, y VM-DB nunca tuvo IP pública asignada.
 
 \subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+
+Verificado el 22-Set-2026 con un script de humo automatizado (\texttt{scripts/smoke-e2e.sh}) que
+confirma, en un mismo corrido: (1) la URL pública de API Gateway responde \texttt{200} en los
+\textit{health checks} de los microservicios que sí los exponen; (2) las IP públicas de VM-PROD y el
+DNS del ALB \textbf{no} responden desde fuera de la VPC (timeout/connection refused), es decir, el
+único camino público real es API Gateway; (3) VM-DB y VM-INGESTA no tienen IP pública. El log completo
+está en \texttt{docs/evidencias/infra/smoke-e2e-2026-09-22.txt}. Los 6 contenedores de ambas VM-PROD
+(nginx + los 5 microservicios) muestran estado \texttt{healthy} en \texttt{docker compose ps}
+(\texttt{docs/evidencias/infra/docker-compose-ps-2026-09-22.txt}).
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth,height=0.86\textheight,keepaspectratio]{imagenes/arquitectura-solucion-v2.png}
+\caption{Arquitectura de la solución, generada a partir del Terraform realmente desplegado.
+Fuente editable: \texttt{diagramas/arquitectura-solucion.drawio}.}
+\label{fig:arquitectura}
+\end{figure}
+
+\pendiente{Confirmar DA-04 (revisión cruzada del diagrama con Fabricio y Alexander) antes de exportar
+el PDF final. Si la infraestructura desplegada cambia (otros CIDR, otra AMI, otros SG), regenerar el
+diagrama desde \texttt{diagramas/arquitectura-solucion.drawio} antes de la entrega.}

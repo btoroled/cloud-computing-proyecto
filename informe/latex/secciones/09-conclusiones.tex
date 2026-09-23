@@ -1,10 +1,28 @@
 \section{Conclusiones y limitaciones}
 \textit{Responsable: Benjamín y equipo.}
 
-\pendiente{Registrar resultados demostrados, requisitos pendientes, contingencias realmente aplicadas, limitaciones y trabajo futuro.}
+\pendiente{Esta sección se cierra al final, cuando todo el equipo termine su parte (F3). Lo que sigue es
+un borrador con lo verificado hasta el 22-Set-2026 — revisar y completar antes de exportar el PDF.}
 
 \subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+
+Contingencias realmente aplicadas (no solo previstas en el plan de riesgos):
+
+\begin{itemize}
+\item \textbf{Registro de imágenes}: se migró de GHCR a Docker Hub (22-Set) porque los paquetes de
+  GHCR quedaban privados por defecto y rompían el \texttt{pull} anónimo en producción.
+\item \textbf{Gestión del bucket S3}: se sacó de Terraform y se gestiona por CLI, por una SCP de la
+  organización del Learner Lab que bloqueaba el \texttt{apply} (ver \S\ref{sec:catalogo-er} y la
+  sección de arquitectura).
+\item \textbf{Cuenta de AWS}: el despliegue final corre en la cuenta de Alexander (AWS Academy),
+  no en la de Benjamín, por agotamiento de crédito — la infraestructura es 100\% reproducible por
+  Terraform, así que el cambio de cuenta no implicó rehacer el diseño, solo re-aplicar.
+\pendiente{Confirmar si finalmente se usó Amplify para el frontend o si se activó la contingencia
+S3+CloudFront (R1) — Amplify aparecía bloqueado por política en la cuenta nueva al momento de
+escribir esto; pendiente de confirmar si el bloqueo también aplica desde la consola web.}
+\end{itemize}
 
 \subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+
+\pendiente{Completar con el resumen final: qué se demostró con evidencia real por cada punto de la
+rúbrica, qué quedó parcial o mockeado, y qué se dejaría para una siguiente iteración del proyecto.}

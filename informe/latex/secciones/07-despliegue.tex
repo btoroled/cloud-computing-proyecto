@@ -1,10 +1,57 @@
 \section{Despliegue y seguridad}
 \textit{Responsable: Benjamín.}
 
-\pendiente{Documentar ambas VM-PROD, API Gateway, balanceador privado, VM-DB, grupos de seguridad, respaldos y procedimiento de reinicio. Adjuntar comprobaciones reales de conectividad y privacidad.}
+Los 5 microservicios corren en \textbf{dos instancias EC2 idénticas} (VM-PROD-1, VM-PROD-2, subredes
+privadas \texttt{10.0.0.10/24} y \texttt{10.0.1.0/24}), cada una con \texttt{docker compose} levantando
+\texttt{nginx} + \texttt{ms1..ms5}. Un \textbf{Application Load Balancer interno} (\texttt{aeropuerto-alb},
+\texttt{scheme=internal}) balancea el tráfico HTTP:80 entre ambas VM, con \textit{health check} sobre
+\texttt{/api/pasajeros/health}. La única entrada pública es \textbf{Amazon API Gateway} (HTTP API), que
+cruza un \textbf{VPC Link} hacia el ALB — API Gateway, ALB y VM-PROD se prueban de punta a punta con
+\texttt{curl} real a la URL pública, sin mocks.
 
 \subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+
+\textbf{Grupos de seguridad.} \texttt{sg-vm-prod} solo permite entrada TCP:80 desde \texttt{sg-alb}
+(ningún puerto abierto a \texttt{0.0.0.0/0}); \texttt{sg-alb} solo desde \texttt{sg-apigw-vpclink};
+\texttt{sg-vm-db} solo TCP 3306/5432/27017 desde \texttt{sg-vm-prod} y \texttt{sg-vm-ingesta}. Esta
+configuración se abrió temporalmente el 21-Set-2026 (\texttt{0.0.0.0/0} en \texttt{sg-vm-prod}) para
+poder probar directo mientras el registro de imágenes estaba roto, y se cerró el 22-Set-2026 una vez
+publicadas las imágenes en Docker Hub — sin recrear las instancias, solo actualizando la regla del
+Security Group (\texttt{terraform apply} con 0 recursos destruidos).
+
+\textbf{Healthchecks.} Los 6 contenedores de cada VM-PROD (\texttt{nginx}, \texttt{ms1..ms5}) tienen
+\texttt{healthcheck} activo en \texttt{docker-compose.yml}. Dos detalles no evidentes que costó
+diagnosticar: (1) el healthcheck de \texttt{nginx} debe apuntar a \texttt{127.0.0.1}, no a
+\texttt{localhost} — \texttt{wget} (busybox) resuelve \texttt{localhost} a \texttt{::1} primero y
+\texttt{nginx} no escucha en IPv6, lo que daba \texttt{Connection refused} aunque el servidor
+funcionara perfectamente; (2) el healthcheck de \texttt{ms1} debe apuntar a \texttt{/health} sin
+prefijo, porque \texttt{nginx} sí recorta \texttt{/api/pasajeros/} para ese servicio en particular
+(\texttt{proxy\_pass} con \texttt{"/"} final), a diferencia de \texttt{ms2..ms5} que reciben la URL
+completa.
+
+\textbf{Respaldo y reinicio.} \texttt{RUNBOOK.md} documenta la provisión inicial, el reinicio tras un
+corte de sesión del Learner Lab (objetivo \textless{}15\,min) y la limpieza. El respaldo de las 3 bases
+de datos se formalizó en \texttt{scripts/backup-db.sh}: sube un script autocontenido a S3 y lo ejecuta
+en VM-DB por SSM Run Command (sin sesión interactiva), volcando MySQL, PostgreSQL y MongoDB a
+\texttt{s3://mla-aeropuerto-lake/backups/}.
 
 \subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+
+Corrida real del 22-Set-2026 (\texttt{docs/evidencias/infra/smoke-e2e-2026-09-22.txt}):
+
+\begin{itemize}
+\item \texttt{curl https://\{api-id\}.execute-api.us-east-1.amazonaws.com/api/pasajeros/health} $\to$
+  \textbf{200 OK}, desde fuera de la VPC.
+\item Acceso directo a las IP públicas de ambas VM-PROD: \textbf{timeout} (bloqueado por
+  \texttt{sg-vm-prod}).
+\item \texttt{nc -zv} al DNS del ALB interno desde fuera: \textbf{connection refused} — no es
+  alcanzable públicamente, como corresponde a un ALB \texttt{internal}.
+\item VM-DB y VM-INGESTA: sin IP pública (confirmado con \texttt{aws ec2 describe-instances}).
+\item \texttt{docker compose ps} en ambas VM-PROD: los 6 servicios en estado \texttt{healthy}
+  (\texttt{docs/evidencias/infra/docker-compose-ps-2026-09-22.txt}).
+\item \texttt{backup-db.sh}: 3 dumps reales subidos a S3 (MySQL 3.6\,MB, PostgreSQL 14\,KB, MongoDB
+  2\,KB) — evidencia de que el mecanismo de respaldo funciona, no solo que existe el script.
+\end{itemize}
+
+\pendiente{Cronometrar un reinicio real tras un corte de sesión del Learner Lab (objetivo
+\textless{}15\,min) y documentar el tiempo efectivo aquí.}

@@ -1,10 +1,36 @@
 \section{Enlaces a repositorios}
 \textit{Responsable: Benjamín.}
 
-\pendiente{Completar la tabla de repositorios usando INDEX.md y comprobar que los enlaces públicos abran sin iniciar sesión.}
+Los 9 repositorios del proyecto son públicos en GitHub; la fuente de verdad es
+\texttt{INDEX.md} en la raíz de \texttt{cloud-computing-proyecto}.
 
 \subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+
+Se verificó la visibilidad de los 9 repos con la API de GitHub (\texttt{gh api .../visibility})
+el 21-Set-2026: los 9 devuelven \texttt{public}. Cada repo de microservicio publica su imagen a
+Docker Hub (\texttt{btoroled/\textless{}repo\textgreater{}}) por GitHub Actions.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.20\textwidth}Xl}
+\toprule Repo & Componente & Dueño \\
+\midrule
+\texttt{cloud-computing-proyecto} & Documentación & Benjamín \\
+\texttt{ms1-pasajeros-api} & Backend — Pasajeros/Tickets (Python+FastAPI+MySQL) & Guillermo \\
+\texttt{ms2-vuelos-api} & Backend — Vuelos/Operaciones (Java+Spring+PostgreSQL) & Mariano \\
+\texttt{ms3-infraestructura-api} & Backend — Infraestructura/Incidencias (Node+MongoDB) & Edinson \\
+\texttt{ms4-manifiesto-api} & Backend — Manifiesto de vuelo, sin BD (Python+FastAPI) & Fabricio \\
+\texttt{ms5-analitica-api} & Backend — Analítico, Athena (Python+FastAPI) & Fabricio \\
+\texttt{aeropuerto-frontend} & Frontend SPA (React+Vite) & Alexander \\
+\texttt{aeropuerto-data-science} & Ingesta + Glue + Athena & Fabricio + equipo \\
+\texttt{aeropuerto-infra-deploy} & Terraform + compose + nginx + RUNBOOK & Benjamín \\
+\bottomrule
+\end{tabularx}
+\caption{Repositorios públicos del proyecto (ver \texttt{INDEX.md} para las URLs completas).}
+\end{table}
 
 \subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+
+Los 9 enlaces abren sin necesidad de iniciar sesión (verificado por API, no solo visualmente).
+\pendiente{Re-verificar los 9 enlaces manualmente en el navegador justo antes de subir el PDF a Canvas,
+por si algún repo cambió de visibilidad después del 21-Set.}

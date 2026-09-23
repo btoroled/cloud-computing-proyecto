@@ -1,10 +1,29 @@
 \section{Introducción y objetivos}
 \textit{Responsable: Benjamín.}
 
-\pendiente{Contexto del Aeropuerto Internacional Jorge Chávez; objetivos, alcance y relación con la rúbrica.}
+El proyecto reutiliza el modelo de datos del Aeropuerto Internacional Jorge Chávez (desarrollado en el
+curso de Base de Datos I) y lo descompone en 5 microservicios independientes desplegados sobre AWS:
+gestión de pasajeros y tickets (MS1), vuelos y operaciones (MS2), infraestructura e incidencias (MS3),
+un servicio agregador de manifiesto de vuelo sin base de datos propia (MS4), y un servicio analítico
+que expone consultas sobre el data lake vía Amazon Athena (MS5). Un frontend SPA consume los 5
+servicios, y un pipeline de Data Science (ingesta, catálogo Glue, consultas Athena) alimenta la capa
+analítica.
 
-\subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+\subsection{Objetivos y alcance}
+
+El objetivo es demostrar, con evidencia real y no solo en el papel, los requisitos técnicos del
+enunciado: 3 lenguajes y 3 motores de base de datos distintos, comunicación real entre microservicios,
+un servicio sin base de datos y uno analítico sobre Athena, carga masiva de datos, despliegue en
+contenedores balanceado y expuesto por HTTPS únicamente a través de API Gateway, un frontend que
+consuma los 5 servicios, y un pipeline de datos completo desde las bases operacionales hasta consultas
+analíticas con JOIN. El alcance de este informe cubre la implementación de cada componente y las
+evidencias recolectadas para el Hito 2 (fecha de entrega: Mar 23-Set-2026, aplazada dos veces desde el
+Dom 20-Set original).
 
 \subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+
+El equipo se organizó como 1 líder/arquitecto (infraestructura, integración, consolidación) y 5
+desarrolladores, uno por microservicio principal más frontend y data science compartidos. El detalle de
+responsabilidades está en \texttt{docs/plan/distribucion-trabajo.md}; el estado de avance por persona,
+en \texttt{docs/plan/personas/}. Las secciones siguientes documentan, componente por componente, lo que
+efectivamente se implementó y la evidencia que lo respalda.
