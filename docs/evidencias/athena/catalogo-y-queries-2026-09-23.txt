@@ -51,3 +51,29 @@ vw_retrasos_hora_punta
 Q1 (recursos con mas fallas) y Q3 (incidencias de combustible) necesitan la tabla
 `incidencia` de MS3 (MongoDB) -- bloqueadas hasta que exista el seed/ingesta de Edinson.
 3 de 5 consultas + 2 de 2 vistas ya funcionan con datos reales de MS1+MS2.
+
+=== ACTUALIZACION: ingesta-ms3 construido, las 5 queries YA funcionan (2026-09-23) ===
+
+Se construyo un ingesta-ms3 real (DS-08), adaptando el aplanado de referencia de
+Fabricio (aplanar_ms3.py) para leer de una MongoDB real. Carga verificada:
+  MongoDB (infra): 500 recursos, 25000 incidencias, 40000 asignaciones (mongoimport)
+  S3 raw/ms3/: recurso(500), incidencia(25000), incidencia_afecta_recurso(50136),
+               incidencia_retrasa_vuelo(46678), asignacion(40000)
+
+Catalogo Glue: 19 tablas (las 3 fuentes completas) + 2 vistas.
+
+Bug encontrado y arreglado: el SerDe simple de Glue no soporta comillas CSV; una coma
+dentro de "descripcion" (texto libre) corrompia las columnas siguientes de la fila
+("Inundacion" terminaba en la posicion de fecha_reporte). Fix: sanear la coma en el
+origen (ingesta.py reemplaza "," por ";" en descripcion) en vez de cambiar el SerDe.
+
+=== Athena: Q1 (recursos con mas fallas) — top resultado ===
+recurso_id=392, radar "Radar Sur - Torre 09": 40 incidencias, severidad_ponderada=79,
+4 criticas, 13 abiertas (32.5%), TPR promedio 2326.7 min
+
+=== Athena: Q3 (incidencias de combustible por aerolinea) ===
+SUCCEEDED (ver detalle con aws athena get-query-results si se necesita para el informe)
+
+=== RESULTADO FINAL: 5 de 5 consultas + 2 de 2 vistas funcionando con datos reales ===
+Pipeline de Data Science completo: MySQL/PostgreSQL/MongoDB -> 3 contenedores de
+ingesta reales -> S3 (raw/ms1, ms2, ms3) -> Glue (19 tablas) -> Athena (Q1-Q5 + 2 vistas).
