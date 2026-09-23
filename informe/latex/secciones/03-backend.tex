@@ -1,0 +1,165 @@
+\section{Backend y modelos de datos}
+\label{sec:backend}
+\textit{Responsable: Guillermo, Mariano, Edinson y Fabricio.}
+
+El backend está compuesto por cinco microservicios en Docker, con tres
+lenguajes y tres motores de base de datos distintos, más dos servicios
+sin persistencia propia:
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.06\textwidth}p{0.24\textwidth}p{0.20\textwidth}p{0.14\textwidth}X}
+\toprule
+MS & Rol funcional & Lenguaje / framework & Motor & Puerto interno \\
+\midrule
+MS1 & Pasajeros / Tickets & Python + FastAPI & MySQL 8 & 8001 \\
+MS2 & Vuelos / Operaciones & Java + Spring Boot & PostgreSQL 16 & 8002 \\
+MS3 & Infraestructura / Incidencias & Node.js + Express & MongoDB 7 & 3003 \\
+MS4 & Manifiesto de vuelo & Python + FastAPI & sin BD (agregador) & 8004 \\
+MS5 & Analítico & Python + FastAPI + boto3 & sin BD (Athena) & 8005 \\
+\bottomrule
+\end{tabularx}
+\caption{Los cinco microservicios: tres con base propia y dos sin
+persistencia. Los tres primeros exponen sus datos operacionales; MS4
+agrega vía HTTP; MS5 consulta el data lake.}
+\label{tab:ms-backend}
+\end{table}
+
+\subsection{Implementación y decisiones}
+
+\subsubsection{MS1 --- Pasajeros / Tickets (Guillermo)}
+\pendiente{Documentar los endpoints implementados, migraciones Alembic,
+seed de 20\,000 tickets, la validación \texttt{MS1$\to$MS2} en
+\texttt{POST /tickets} y la evidencia del \texttt{COUNT(*)} en las tablas
+de volumen (\texttt{ticket}, \texttt{equipaje}).}
+
+\subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
+\pendiente{Documentar el modelo Flyway, la máquina de estados de
+\texttt{vuelo.estado}, el endpoint \texttt{GET /vuelos/\{id\}/exists}
+usado por MS1 y MS3, la tripulación N-M y el seed de 20\,000 vuelos.
+Adjuntar la evidencia del \texttt{COUNT(*)}.}
+
+\subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
+\pendiente{Documentar los esquemas JSON de \texttt{recursos},
+\texttt{incidencias} y \texttt{asignaciones}, los endpoints CRUD, la
+validación \texttt{MS3$\to$MS2} al crear una incidencia con
+\texttt{retrasa\_vuelos[]}, y el seed de 20\,000 incidencias con la
+evidencia del \texttt{db.incidencias.countDocuments()}.}
+
+\subsubsection{MS4 --- Manifiesto de vuelo (Fabricio)}
+MS4 es un agregador HTTP sin base de datos propia. Recibe una petición
+por un identificador de vuelo y compone una respuesta que consolida
+información de MS1, MS2 y MS3, sin persistir nada. Se implementa en
+Python con FastAPI 0.115 y \texttt{httpx.AsyncClient}.
+
+Endpoints principales bajo el prefijo \texttt{/api/manifiesto}:
+
+\begin{itemize}
+  \item \texttt{GET /\{vuelo\_id\}}: manifiesto consolidado. Verifica
+    primero que el vuelo exista consultando
+    \texttt{GET /api/vuelos/\{id\}/exists} en MS2 (devuelve
+    \texttt{404} sin gastar el resto de llamadas si el vuelo no existe).
+    Luego lanza en paralelo con \texttt{asyncio.gather} cuatro
+    peticiones: al vuelo completo con aeronave y aerolínea en MS2, a los
+    tickets del vuelo con pasajeros y equipaje en MS1, a la tripulación
+    en MS2 y a las incidencias abiertas del vuelo en MS3.
+  \item \texttt{GET /\{vuelo\_id\}/pasajeros} y
+    \texttt{/\{vuelo\_id\}/resumen}: subrecursos que reutilizan la misma
+    infraestructura. El resumen calcula conteos: pasajeros totales,
+    kilogramos de equipaje y número de incidencias abiertas.
+  \item \texttt{GET /health/dependencias}: consulta en paralelo el
+    \texttt{/health} de MS1, MS2 y MS3 y responde con un estado global
+    (\texttt{up}, \texttt{degraded} o \texttt{down}).
+\end{itemize}
+
+El cliente HTTP compartido (\texttt{app/clients/base.py}) implementa
+\emph{timeouts} de 3 segundos, reintentos exponenciales solo en errores
+transitorios (\emph{timeout}, \texttt{ConnectError}, HTTP \texttt{5xx})
+y propagación tal cual de errores \texttt{4xx}. Sirve como referencia
+para el cliente que MS1 y MS3 usan al consumir MS2.
+
+La estrategia de tolerancia a fallos (MS4-04) es clave: si alguna
+dependencia responde con error o excede el timeout, MS4 no falla la
+petición completa; el campo correspondiente queda vacío en la respuesta
+y se agrega un mensaje al arreglo \texttt{warnings[]}. Un manifiesto
+parcial es siempre preferible a un \texttt{500}. Esta decisión permite
+que el frontend siga renderizando información útil aunque MS3 esté
+inaccesible.
+
+\subsubsection{MS5 --- Analítico sobre Athena (Fabricio)}
+MS5 tampoco tiene base de datos propia: consulta el catálogo Glue
+\texttt{aeropuerto\_lake} mediante \texttt{boto3}. Su
+\texttt{AthenaClient} ejecuta cada consulta con
+\texttt{start\_query\_execution}, hace \emph{poll} cada 500 ms a
+\texttt{get\_query\_execution} hasta un estado terminal
+(\texttt{SUCCEEDED}, \texttt{FAILED} o \texttt{CANCELLED}) con timeout
+de 60 segundos, y luego pagina \texttt{get\_query\_results}
+convirtiendo los valores a tipos Python (\texttt{bigint}$\to$\texttt{int},
+\texttt{decimal}$\to$\texttt{float}, \texttt{NULL}$\to$\texttt{None}).
+Un cache local por SHA-256 del SQL evita ejecuciones repetidas dentro
+de \texttt{ATHENA\_CACHE\_TTL\_SECONDS} (300 s por defecto).
+
+Los cinco endpoints exponen las consultas Q1--Q5 descritas en la
+Sección \ref{sec:data-science}:
+
+\begin{itemize}
+  \item \texttt{/api/analitica/recursos-mas-fallas?dias=N}
+  \item \texttt{/api/analitica/retraso-promedio?tipo=Nacional|Internacional}
+  \item \texttt{/api/analitica/incidencias-combustible-por-aerolinea}
+  \item \texttt{/api/analitica/recaudacion-tuua-por-categoria}
+    (lee la vista \texttt{vw\_recaudacion\_tuua})
+  \item \texttt{/api/analitica/vuelos-hora-punta-retrasados}
+    (lee la vista \texttt{vw\_retrasos\_hora\_punta})
+\end{itemize}
+
+Los parámetros se validan con Pydantic (\texttt{Literal} para
+\texttt{tipo}, \texttt{Query(ge=1, le=365)} para \texttt{dias}) antes de
+interpolarse en el SQL: no hay riesgo de inyección. Los errores de
+Athena se envuelven en \texttt{AthenaQueryError} y se mapean a HTTP
+\texttt{502} siguiendo el contrato común de errores
+(\texttt{ATHENA\_QUERY\_ERROR}). En EC2 con Learner Lab, \texttt{boto3}
+toma las credenciales del \texttt{LabInstanceProfile} automáticamente;
+no se pasan claves en \texttt{.env}.
+
+\subsubsection{Contratos y clientes compartidos}
+Los cinco microservicios respetan los mismos contratos: el conjunto de
+enums (\texttt{docs/contratos/enums.md}), los rangos de identificadores
+(\texttt{docs/plan-de-trabajo.md \S3}) y el formato de errores
+(\texttt{docs/contratos/errores.md}). El cliente HTTP con reintentos y
+propagación de \texttt{X-Request-Id} de MS4 se reutiliza en MS1 y MS3
+para las llamadas a MS2.
+
+\subsection{Resultados y evidencias}
+
+\begin{itemize}
+  \item Los cinco servicios responden \texttt{/health} y exponen su
+    especificación en \texttt{/openapi.json} y Swagger-UI en
+    \texttt{/docs}. Los cinco \texttt{openapi.yaml} borrador viven en la
+    raíz de cada repositorio.
+  \item MS4 se probó \emph{end-to-end} contra los MS1/MS2/MS3 reales
+    durante el Hito 1: para el vuelo \texttt{id=1} devolvió el vuelo
+    \texttt{CM0001 (Copa Airlines, LIM-TRU)}, la tripulación con
+    licencias \texttt{DGAC-*} y una lista de incidencias, con
+    \texttt{warnings[]} vacío cuando las tres dependencias respondieron.
+    Al detener MS3, la misma petición devolvió \texttt{200} con
+    \texttt{incidencias\_abiertas: []} y el warning correspondiente
+    (evidencia de MS4-04).
+  \item MS5 se acompaña de dieciséis pruebas unitarias con
+    \texttt{MagicMock} del cliente \texttt{boto3.client("athena")} que
+    cubren: éxito con conversión de tipos, \texttt{FAILED} $\to$
+    \texttt{AthenaQueryError}, cache TTL, cache que no cruza entre
+    consultas distintas, \texttt{NULL} $\to$ \texttt{None}, cada uno de
+    los cinco endpoints con \texttt{200} y con \texttt{502}, y
+    validación de parámetros fuera de rango con \texttt{422}. Todas
+    pasan localmente sin necesidad de credenciales AWS.
+  \item Imágenes de MS4 y MS5 publicadas en \texttt{v1.0} tras
+    \texttt{git tag} + \texttt{git push --tags} (workflow
+    \texttt{build-push-*} de cada repositorio). En \texttt{compose/vm-prod/}
+    del repositorio de infraestructura se hace \texttt{docker compose
+    pull \&\& up} para desplegar la última versión sin cambios de
+    código.
+\end{itemize}
+
+\pendiente{Adjuntar los \texttt{COUNT(*)} de MS1, MS2 y MS3 tras la
+carga masiva. Adjuntar el JSON completo del manifiesto y el JSON de una
+consulta analítica ejecutada contra la infraestructura desplegada.}

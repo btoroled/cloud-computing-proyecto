@@ -1,0 +1,51 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\setlength{\emergencystretch}{3em}
+\newcommand{\pendiente}[1]{\par\noindent\textcolor{red!65!black}{\textbf{Pendiente:} #1}\par}
+\newcommand{\evidenciafrontend}[3]{%
+  \begin{figure}[htbp]
+    \centering
+    \IfFileExists{imagenes/#1}{%
+      \includegraphics[width=0.95\linewidth,height=0.65\textheight,keepaspectratio]{imagenes/#1}%
+    }{%
+      \fbox{\parbox{0.90\linewidth}{\centering\textbf{Evidencia real pendiente}\par
+      Archivo esperado: \texttt{\detokenize{#1}}}}%
+    }
+    \caption{#2}\label{#3}
+  \end{figure}%
+}
+\begin{document}
+\input{portada}
+\tableofcontents
+\clearpage
+\input{secciones/01-introduccion}
+\clearpage
+\input{secciones/02-arquitectura}
+\clearpage
+\input{secciones/03-backend}
+\clearpage
+\input{secciones/04-transformaciones}
+\clearpage
+\input{secciones/05-frontend}
+\clearpage
+\input{secciones/06-data-science}
+\clearpage
+\input{secciones/07-despliegue}
+\clearpage
+\input{secciones/08-repositorios}
+\clearpage
+\input{secciones/09-conclusiones}
+\clearpage
+\appendix
+\input{secciones/anexo-trazabilidad}
+\end{document}

@@ -1,0 +1,135 @@
+\section{Transformaciones del modelo monolítico}
+\label{sec:transformaciones}
+\textit{Responsable: Fabricio.}
+
+El modelo relacional único del proyecto de Base de Datos I se reparte en
+tres sistemas de persistencia autónomos (MySQL, PostgreSQL y MongoDB), uno
+por microservicio con base de datos. Ninguna tabla se comparte entre
+motores. Las relaciones que en el monolito eran claves foráneas físicas se
+transforman en \emph{referencias suaves} validadas por REST en tiempo de
+escritura. Los enumerados que antes vivían como tipos \texttt{ENUM} en un
+solo esquema se replican por servicio, sincronizados por
+\texttt{docs/contratos/enums.md} para que los \texttt{JOIN} de Athena
+funcionen.
+
+\subsection{Implementación y decisiones}
+
+\subsubsection{Descomposición por microservicio}
+Las veintiuna relaciones del modelo original se distribuyen así:
+
+\begin{itemize}
+  \item \textbf{MS1 (MySQL)}: \texttt{persona}, \texttt{pasajero},
+    \texttt{categoria\_migratoria}, \texttt{ticket}, \texttt{checkin},
+    \texttt{equipaje}. Dueño de la identidad de los viajeros y de las
+    transacciones comerciales.
+  \item \textbf{MS2 (PostgreSQL)}: \texttt{vuelo}, \texttt{aerolinea},
+    \texttt{aeronave}, \texttt{asiento}, \texttt{empleado},
+    \texttt{tripulacion}, \texttt{operativo\_tierra},
+    \texttt{opera\_tripulacion}. Dueño de la operativa aeroportuaria.
+  \item \textbf{MS3 (MongoDB)}: colecciones \texttt{recursos},
+    \texttt{incidencias} y \texttt{asignaciones}. Dueño de la
+    infraestructura física del terminal y de la gestión de incidencias.
+\end{itemize}
+
+\subsubsection{Jerarquía \texttt{Persona} partida}
+En el modelo E-R original, \texttt{Persona} es superclase de
+\texttt{Pasajero} y también de \texttt{Personal} (a su vez superclase de
+\texttt{Tripulacion} y \texttt{Operativo\_Tierra}). En una arquitectura de
+microservicios no es viable compartir la tabla \texttt{persona} entre MS1
+y MS2, pues cada servicio administra su propio motor. La transformación
+adoptada es:
+
+\begin{itemize}
+  \item \textbf{MS1} conserva \texttt{persona} $\to$ \texttt{pasajero}
+    (Class Table Inheritance). \texttt{Pasajero} tiene su propio
+    \texttt{id\_persona} heredado y su clave alternativa por
+    \texttt{(tipo\_documento, numero\_documento)}.
+  \item \textbf{MS2} crea una tabla \texttt{empleado} con
+    \texttt{nombre}, \texttt{apellido} y \texttt{fecha\_nacimiento}
+    embebidos (equivalente a lo que Persona aportaba en el monolito), y
+    sus dos subclases \texttt{tripulacion} (con \texttt{num\_licencia}) y
+    \texttt{operativo\_tierra} (con \texttt{area\_operativa}). No hay
+    tabla \texttt{persona} en MS2; los atributos de identidad se duplican
+    de forma deliberada.
+\end{itemize}
+
+Esta duplicación es consciente y se acepta como el costo de la autonomía
+por servicio. Los diagramas E-R publicados en \texttt{docs/er/} de cada
+repositorio reflejan la duplicación.
+
+\subsubsection{Referencias suaves entre servicios}
+Los identificadores que en el monolito eran claves foráneas entre tablas
+de distintos dominios se convierten en referencias validadas por REST:
+
+\begin{itemize}
+  \item \texttt{ms1.ticket.vuelo\_id} y \texttt{ms1.equipaje.vuelo\_id}
+    apuntan a \texttt{ms2.vuelo.id}. En cada \texttt{POST /tickets} y
+    \texttt{POST /equipajes}, MS1 llama a
+    \texttt{GET /api/vuelos/\{id\}/exists} en MS2. Si el vuelo no existe
+    o está \texttt{Cancelado}, MS1 responde \texttt{422} sin persistir.
+  \item \texttt{ms3.incidencia.retrasa\_vuelos[].vuelo\_id} y
+    \texttt{ms3.asignacion.vuelo\_id} apuntan a \texttt{ms2.vuelo.id}.
+    MS3 valida los identificadores contra MS2 al crear la incidencia o
+    la asignación.
+  \item MS4 no persiste: agrega vía HTTP las respuestas de MS1, MS2 y
+    MS3 al servir el manifiesto. Es el consumidor de todas las
+    referencias suaves, no las valida ni las crea.
+\end{itemize}
+
+Los logs de los servicios registran cada llamada saliente
+(\texttt{X-Request-Id} propagado por nginx), lo que constituye la
+evidencia obligatoria de que un microservicio consume a otro.
+
+\subsubsection{Enumerados replicados y contrato compartido}
+El enunciado exige valores idénticos de enums entre los tres servicios
+para que las agregaciones de Athena funcionen. Se centralizan en
+\texttt{docs/contratos/enums.md} del repositorio de documentación:
+\texttt{estado\_vuelo}, \texttt{tipo\_vuelo}, \texttt{tipo\_documento},
+\texttt{alianza}, \texttt{estado\_boarding}, \texttt{estado\_acople},
+\texttt{gravedad}, \texttt{tipo\_incidencia}, \texttt{tipo\_recurso},
+\texttt{nombre\_categoria\_migratoria}, \texttt{area\_operativa},
+\texttt{clase\_aeronave} (OACI) y \texttt{frecuencia\_radar}. Cada servicio
+los implementa con la sintaxis nativa de su motor (PostgreSQL
+\texttt{CREATE TYPE ... AS ENUM}, MySQL \texttt{ENUM} o \texttt{CHECK},
+validación en la capa aplicativa de MongoDB), pero los \emph{strings}
+coinciden byte a byte para que Athena pueda hacer \texttt{GROUP BY} y
+\texttt{JOIN} sobre esas columnas sin normalizaciones intermedias. Los
+valores no llevan tildes en enums (\texttt{Critica}, \texttt{Transito},
+\texttt{Inundacion}) para evitar problemas de codificación en la ruta
+CSV $\to$ Glue $\to$ Athena.
+
+\subsubsection{Rangos de identificadores deterministas}
+Para que los \texttt{JOIN} entre tablas de tres motores distintos
+funcionen en Athena, los identificadores deben cruzarse aunque la
+generación de datos ocurra en tres corridas independientes por servicio.
+Se acuerdan en \texttt{docs/plan-de-trabajo.md \S3} rangos disjuntos por
+entidad (\texttt{vuelo.id} 1--25\,000, \texttt{persona.id} 100\,000--160\,000,
+\texttt{ticket.id} 1--60\,000, \texttt{recurso.id} 1--500,
+\texttt{incidencia.id} 1--30\,000) y un \texttt{SEED} fijo
+(\texttt{20\,260\,905}) para el generador \texttt{seeds/} compartido. El
+orden interno del generador es \textbf{MS2 $\to$ MS1 $\to$ MS3} para que
+los identificadores de vuelo existan antes de que se creen los tickets y
+las incidencias que los referencian. Detalles en la Sección
+\ref{sec:data-science}.
+
+\subsection{Resultados y evidencias}
+
+Las transformaciones descritas se materializan en artefactos verificables:
+
+\begin{itemize}
+  \item Los tres diagramas E-R por servicio residen en \texttt{docs/er/}
+    del repositorio de documentación. Cada uno refleja únicamente las
+    tablas de su motor, con la duplicación deliberada de atributos de
+    identidad.
+  \item Los archivos de contrato compartido: \texttt{docs/contratos/enums.md}
+    (enumerados) y \texttt{docs/plan-de-trabajo.md \S3} (rangos de ID).
+  \item Los generadores en \texttt{aeropuerto-data-science/seeds/}
+    respetan los rangos y el orden acordado, y producen salida
+    reproducible byte a byte con el mismo \texttt{SEED} (comprobado por
+    igualdad de sumas MD5 entre corridas).
+  \item La validación cruzada de las referencias suaves se ejecuta con
+    las cinco consultas Q1--Q5 sobre Postgres local (Sección
+    \ref{sec:data-science}); si un identificador no cruzara, los
+    \texttt{JOIN} devolverían cero filas. Los resultados no vacíos
+    confirman la integridad.
+\end{itemize}
