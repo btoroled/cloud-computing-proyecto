@@ -1,10 +1,172 @@
 \section{Frontend}
+\label{sec:frontend}
 \textit{Responsable: Alexander.}
 
-\pendiente{Describir las cuatro vistas, integración con MS1 a MS5, estados de carga, error y vacío, responsive y Swagger agregado. Completar la matriz REST con verbo, ruta, servicio y evidencia. Confirmar con el equipo el criterio de métodos REST para MS4 y MS5, cuyas rutas son GET. Añadir la URL pública y capturas de integración real.}
+\subsection{Objetivo y arquitectura de la aplicación}
+El frontend implementa un centro de operaciones del Aeropuerto Internacional
+Jorge Chávez con React, TypeScript y Vite. React Router organiza la navegación;
+Swagger UI integra la documentación. La aplicación separa páginas, componentes
+reutilizables, tipos, clientes HTTP, adaptadores y datos simulados.
+El navegador consulta APIs, sin conectarse directamente a las bases de datos
+ni ejecutar consultas en Athena.
 
-\subsection{Implementación y decisiones}
-\pendiente{Redactar esta sección con el estado real del proyecto.}
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.20\textwidth}p{0.20\textwidth}X}
+\toprule
+Vista & Ruta & Servicios y función \\
+\midrule
+Operaciones & \texttt{/} & MS2: vuelos y estados; MS4: manifiesto y resumen. \\
+Tickets y check-in & \texttt{/tickets} & MS1: pasajeros, categorías y tickets; MS2: vuelos. \\
+Infraestructura & \texttt{/infraestructura} & MS3: recursos, disponibilidad e incidencias. \\
+Dashboard & \texttt{/dashboard} & MS5: cinco indicadores obtenidos por el backend desde Athena. \\
+Catálogo de APIs & \texttt{/docs} & Documentación OpenAPI de MS1 a MS5. \\
+\bottomrule
+\end{tabularx}
+\caption{Cuatro vistas funcionales y una página adicional de documentación.}
+\end{table}
 
-\subsection{Resultados y evidencias}
-\pendiente{Incluir las evidencias identificadas en la plantilla del informe y describir lo que demuestran.}
+\subsection{Flujos implementados}
+\subsubsection{Consulta de vuelos y manifiesto}
+Operaciones incluye listado, búsqueda, filtros y detalle. Consulta también
+aerolíneas para mostrar sus nombres; si esta consulta falla, mantiene el
+identificador de aerolínea recibido con el vuelo.
+
+El selector de estado presenta transiciones permitidas: Programado admite
+Embarcando, Retrasado o Cancelado; Embarcando admite Despegado, Retrasado o Cancelado;
+Retrasado admite Embarcando, Despegado o Cancelado; Despegado admite Aterrizado.
+Aterrizado y Cancelado son finales. La validación definitiva corresponde a MS2.
+En modo real, la hora de despegue se muestra a partir de la respuesta del backend.
+
+El manifiesto consulta detalle y resumen de MS4. Sus adaptadores conservan
+advertencias de dependencias y muestran como no disponibles los campos
+no entregados, como determinados nombres, asientos o equipajes.
+Una respuesta parcial no equivale a un manifiesto completo.
+
+\subsubsection{Tickets y check-in}
+Se cargan vuelos de MS2 y categorías migratorias de MS1. La emisión busca
+al pasajero por documento, lo registra cuando no existe y solicita el ticket.
+La validación del vuelo por MS1 requiere evidencia del backend para demostrar
+su consumo de MS2. Tras emitir el ticket se muestra el comprobante y se habilita
+el check-in. Actualmente se envía counter \texttt{WEB} y
+\texttt{con\_equipaje=false}; no se implementa aquí un flujo completo de equipaje.
+
+\subsubsection{Recursos e incidencias}
+La vista lista recursos e incidencias, filtra recursos por estado y cambia
+su disponibilidad. Adapta los campos de mangas y radares. Las incidencias
+incluyen gravedad, descripción, tipo, recurso y, opcionalmente, vuelo.
+La persistencia y validación de las asociaciones corresponden a MS3.
+
+\subsubsection{Dashboard}
+Se consultan cinco resultados de MS5: recursos con más fallas, retraso promedio
+por tipo de vuelo, incidencias de combustible por aerolínea, recaudación TUUA
+por categoría y vuelos retrasados en hora punta.
+Las solicitudes se ejecutan en paralelo; actualmente, un fallo en cualquiera
+hace fallar la carga conjunta. Los adaptadores transforman sus respuestas
+para las tarjetas y gráficos. Los mocks permiten revisar la interfaz, pero
+no demuestran ejecución de Athena.
+
+\subsection{Configuración, errores y documentación}
+\texttt{VITE\_API\_BASE} define API Gateway. Los mocks están activos por defecto.
+Para probar todos los servicios reales se requiere
+\texttt{VITE\_USE\_MOCKS=false} y \texttt{VITE\_REAL\_SERVICES} vacío.
+Esta última variable permite activar servicios por etapas; una ejecución mixta
+no acredita la integración completa.
+
+El despliegue previsto en Amplify utiliza \texttt{dist} y reescritura hacia
+\texttt{index.html}. Se deben verificar rutas y CORS desde el origen público.
+Las variables de Vite se incorporan al compilar, por lo que cambiar la URL
+requiere una nueva compilación.
+\pendiente{Registrar las URLs HTTPS definitivas del frontend y API Gateway,
+la versión utilizada y la fecha de prueba real.}
+
+El cliente maneja errores 404, 409, 422 y 502--504, además de problemas de conexión
+y configuración. Configura 12 segundos de espera para solicitudes habituales
+y 75 para MS5. Las vistas incluyen estados de carga, vacío y error y diseño
+adaptable. La revisión local debe repetirse en la versión desplegada.
+
+En \texttt{/docs}, un selector carga los cinco contratos OpenAPI. Las URLs
+se derivan de API Gateway, con sobrescritura individual; sin URL base se usan
+direcciones locales. Su funcionamiento depende de la publicación y acceso
+a cada especificación.
+
+\subsection{Matriz de cobertura REST}
+\label{sec:matriz-rest}
+La tabla \ref{tab:rest} recoge las llamadas de los clientes
+\texttt{src/api/}, relativas a API Gateway. Los prefijos repetidos de MS4 y MS5
+reflejan el contrato del código; deben cotejarse con el despliegue.
+Los identificadores de evidencia son previstos, no pruebas ya realizadas.
+{\small
+\begin{longtable}{p{0.10\textwidth}p{0.08\textwidth}p{0.53\textwidth}p{0.16\textwidth}}
+\caption{Cobertura implementada; verificación pública pendiente.}\label{tab:rest}\\
+\toprule Servicio & Verbo & Ruta & Evidencia \\
+\midrule\endfirsthead
+\toprule Servicio & Verbo & Ruta & Evidencia \\
+\midrule\endhead
+MS2 & GET & \path{/api/vuelos} & E-5.1a \\
+MS2 & GET & \path{/api/vuelos/aerolineas} & E-5.1a \\
+MS2 & GET & \path{/api/vuelos/{id}} & E-5.1a \\
+MS2 & PATCH & \path{/api/vuelos/{id}/estado} & E-5.1b \\
+MS4 & GET & \path{/api/manifiesto/manifiesto/{id}} & E-5.1c \\
+MS4 & GET & \path{/api/manifiesto/manifiesto/{id}/resumen} & E-5.1c \\
+MS1 & GET & \path{/api/pasajeros/categorias-migratorias} & E-5.1d \\
+MS1 & GET & \path{/api/pasajeros/pasajeros?tipo_documento=...&numero_documento=...} & E-5.1d \\
+MS1 & POST & \path{/api/pasajeros/pasajeros} & E-5.1d \\
+MS1 & POST & \path{/api/pasajeros/tickets} & E-5.1d \\
+MS1 & POST & \path{/api/pasajeros/tickets/{id}/checkin} & E-5.1d \\
+MS3 & GET & \path{/api/infra/recursos?estado=...} & E-5.1e \\
+MS3 & PATCH & \path{/api/infra/recursos/{id}/estado} & E-5.1e \\
+MS3 & GET & \path{/api/infra/incidencias} & E-5.1e \\
+MS3 & POST & \path{/api/infra/incidencias} & E-5.1e \\
+MS5 & GET & \path{/api/analitica/analitica/recursos-mas-fallas?dias=7} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/analitica/retraso-promedio?tipo=Internacional} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/analitica/incidencias-combustible-por-aerolinea} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/analitica/recaudacion-tuua-por-categoria} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/analitica/vuelos-hora-punta-retrasados} & E-5.1f \\
+\bottomrule
+\end{longtable}
+}
+MS1 usa GET y POST; MS2, GET y PATCH; MS3, GET, POST y PATCH.
+MS4 y MS5 solo usan GET en varias rutas.
+\pendiente{Aclarar el criterio de dos métodos REST por servicio:
+varias rutas GET no equivalen a varios verbos HTTP.}
+
+\subsection{Validación y alcance}
+En la revisión del 22 de septiembre de 2026, sobre el commit \texttt{34fbd30}, se ejecutaron nuevamente
+\texttt{npm test}, \texttt{npm run lint} y \texttt{npm run build}:
+las cuatro pruebas de contratos pasaron, el análisis estático terminó sin errores
+y se generó la compilación de producción. Vite advirtió que el paquete de
+Swagger supera 500 kB; no impidió compilar y queda como oportunidad de optimización.
+Estas comprobaciones no realizan una prueba de integración con AWS.
+
+El registro \path{docs/VALIDACION_LOCAL.md} del frontend, del 21 de septiembre
+de 2026, documenta compilación y análisis estático correctos, recorridos con
+mocks de las cuatro vistas y revisión local del catálogo y diseño reducido.
+No constituye evidencia de funcionamiento en AWS.
+Las pruebas de contratos emplean respuestas de ejemplo de MS4 y MS5.
+La comprobación final exige repetir recorridos sin mocks y registrar las
+respuestas HTTP. La ejecución de Athena y las llamadas entre backends
+deben acreditarse con sus respectivos responsables.
+
+\subsection{Evidencias por completar}
+\label{sec:evidencias-frontend}
+Los espacios siguientes muestran un aviso mientras no exista una captura real.
+Los originales se guardarán en \path{docs/evidencias/frontend/} y las copias
+del informe en \path{informe/latex/imagenes/}.
+\evidenciafrontend{frontend-vuelos.png}{Consulta y detalle MS2 (E-5.1a).}{fig:fe-vuelos}
+\evidenciafrontend{frontend-estado-vuelo.png}{Transición válida y hora real MS2 (E-5.1b).}{fig:fe-estado}
+\evidenciafrontend{frontend-manifiesto.png}{Manifiesto y resumen MS4 (E-5.1c).}{fig:fe-manifiesto}
+\evidenciafrontend{frontend-ticket-checkin.png}{Emisión y check-in MS1 con vuelos MS2 (E-5.1d).}{fig:fe-ticket}
+\evidenciafrontend{frontend-infraestructura.png}{Recursos e incidencias MS3 (E-5.1e).}{fig:fe-infra}
+\evidenciafrontend{frontend-dashboard.png}{Cinco indicadores MS5 con datos de Athena (E-5.1f).}{fig:fe-dashboard}
+\evidenciafrontend{frontend-swagger.png}{Swagger agregado de los cinco servicios (E-5.1g).}{fig:fe-swagger}
+\evidenciafrontend{frontend-responsive.png}{Vista móvil sin desbordamiento horizontal (E-5.1h).}{fig:fe-responsive}
+\evidenciafrontend{frontend-network.png}{Cobertura REST en Network (E-5.2).}{fig:fe-network}
+\evidenciafrontend{frontend-amplify.png}{URL HTTPS y operación real desde Amplify (E-5.3).}{fig:fe-amplify}
+
+\subsection{Fuentes}
+La descripción se basa en el README del frontend, \path{src/api/client.ts},
+los clientes por servicio, adaptadores, páginas y
+\path{docs/VALIDACION_LOCAL.md}. La matriz inventaría el código, no certifica
+disponibilidad en producción. El plan de capturas se encuentra en
+\path{docs/EVIDENCIAS_HITO2.md}.

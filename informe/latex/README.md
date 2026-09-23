@@ -43,4 +43,8 @@ Solo añadir esa figura cuando exista el archivo. Referenciarla con `\ref{fig:fr
 
 ## Antes de entregar
 
+La sección 5 contiene la redacción del frontend y la matriz de 20 operaciones. Sus capturas se insertan automáticamente cuando existen los archivos previstos; mientras falten, aparecen recuadros de evidencia pendiente. El registro y los nombres están en [la guía de evidencias](../../docs/evidencias/frontend/README.md).
+
+La subsección `secciones/06-catalogo-er.tex` incluye el diagrama propuesto y explica las 19 tablas y sus uniones. La imagen está incluida en `imagenes/`, por lo que viaja en el ZIP. Queda contrastar el modelo con Glue desplegado.
+
 Completar los datos de la portada, reemplazar los pendientes por contenido comprobado, incorporar las capturas reales, completar la trazabilidad y revisar el PDF generado. La plantilla no da por terminada ninguna integración.

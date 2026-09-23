@@ -8,9 +8,22 @@
 \usepackage{tabularx}
 \usepackage{longtable}
 \usepackage{xcolor}
+\usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
 \setlength{\emergencystretch}{3em}
 \newcommand{\pendiente}[1]{\par\noindent\textcolor{red!65!black}{\textbf{Pendiente:} #1}\par}
+\newcommand{\evidenciafrontend}[3]{%
+  \begin{figure}[htbp]
+    \centering
+    \IfFileExists{imagenes/#1}{%
+      \includegraphics[width=0.95\linewidth,height=0.65\textheight,keepaspectratio]{imagenes/#1}%
+    }{%
+      \fbox{\parbox{0.90\linewidth}{\centering\textbf{Evidencia real pendiente}\par
+      Archivo esperado: \texttt{\detokenize{#1}}}}%
+    }
+    \caption{#2}\label{#3}
+  \end{figure}%
+}
 \begin{document}
 \input{portada}
 \tableofcontents
