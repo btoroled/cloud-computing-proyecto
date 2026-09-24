@@ -73,12 +73,18 @@ Para probar todos los servicios reales se requiere
 Esta última variable permite activar servicios por etapas; una ejecución mixta
 no acredita la integración completa.
 
-El despliegue previsto en Amplify utiliza \texttt{dist} y reescritura hacia
-\texttt{index.html}. Se deben verificar rutas y CORS desde el origen público.
+El despliegue en Amplify utiliza \texttt{dist} y una reescritura HTTP 200 hacia
+\texttt{index.html} para las rutas de React. Las rutas internas y CORS se probaron
+desde el origen público.
 Las variables de Vite se incorporan al compilar, por lo que cambiar la URL
 requiere una nueva compilación.
-\pendiente{Registrar las URLs HTTPS definitivas del frontend y API Gateway,
-la versión utilizada y la fecha de prueba real.}
+El frontend se publicó en
+\url{https://main.d6qmhb5ipm8l2.amplifyapp.com/} y consume API Gateway en
+\url{https://0tmopxsjij.execute-api.us-east-1.amazonaws.com/}.
+Las capturas de la aplicación desplegada son del 23 de septiembre de 2026;
+el arreglo de rutas MS4 quedó integrado en el commit \texttt{f177e0b} de
+\texttt{main} del frontend. La captura de manifiesto corresponde a la prueba
+posterior a ese despliegue y al ajuste de comunicación interna MS4--MS1.
 
 El cliente maneja errores 404, 409, 422 y 502--504, además de problemas de conexión
 y configuración. Configura 12 segundos de espera para solicitudes habituales
@@ -93,12 +99,12 @@ a cada especificación.
 \subsection{Matriz de cobertura REST}
 \label{sec:matriz-rest}
 La tabla \ref{tab:rest} recoge las llamadas de los clientes
-\texttt{src/api/}, relativas a API Gateway. Los prefijos repetidos de MS4 y MS5
-reflejan el contrato del código; deben cotejarse con el despliegue.
-Los identificadores de evidencia son previstos, no pruebas ya realizadas.
+\texttt{src/api/}, relativas a API Gateway, con los prefijos corregidos de
+MS4 y MS5. La columna de evidencia indica el archivo o prueba asociada,
+pero una captura de pantalla no acredita por sí sola cada verbo de la tabla.
 {\small
 \begin{longtable}{p{0.10\textwidth}p{0.08\textwidth}p{0.53\textwidth}p{0.16\textwidth}}
-\caption{Cobertura implementada; verificación pública pendiente.}\label{tab:rest}\\
+\caption{Cobertura REST implementada; la evidencia pública disponible es parcial para operaciones de escritura.}\label{tab:rest}\\
 \toprule Servicio & Verbo & Ruta & Evidencia \\
 \midrule\endfirsthead
 \toprule Servicio & Verbo & Ruta & Evidencia \\
@@ -107,8 +113,8 @@ MS2 & GET & \path{/api/vuelos} & E-5.1a \\
 MS2 & GET & \path{/api/vuelos/aerolineas} & E-5.1a \\
 MS2 & GET & \path{/api/vuelos/{id}} & E-5.1a \\
 MS2 & PATCH & \path{/api/vuelos/{id}/estado} & E-5.1b \\
-MS4 & GET & \path{/api/manifiesto/manifiesto/{id}} & E-5.1c \\
-MS4 & GET & \path{/api/manifiesto/manifiesto/{id}/resumen} & E-5.1c \\
+MS4 & GET & \path{/api/manifiesto/{id}} & E-5.1c \\
+MS4 & GET & \path{/api/manifiesto/{id}/resumen} & E-5.1c \\
 MS1 & GET & \path{/api/pasajeros/categorias-migratorias} & E-5.1d \\
 MS1 & GET & \path{/api/pasajeros/pasajeros?tipo_documento=...&numero_documento=...} & E-5.1d \\
 MS1 & POST & \path{/api/pasajeros/pasajeros} & E-5.1d \\
@@ -118,11 +124,11 @@ MS3 & GET & \path{/api/infra/recursos?estado=...} & E-5.1e \\
 MS3 & PATCH & \path{/api/infra/recursos/{id}/estado} & E-5.1e \\
 MS3 & GET & \path{/api/infra/incidencias} & E-5.1e \\
 MS3 & POST & \path{/api/infra/incidencias} & E-5.1e \\
-MS5 & GET & \path{/api/analitica/analitica/recursos-mas-fallas?dias=7} & E-5.1f \\
-MS5 & GET & \path{/api/analitica/analitica/retraso-promedio?tipo=Internacional} & E-5.1f \\
-MS5 & GET & \path{/api/analitica/analitica/incidencias-combustible-por-aerolinea} & E-5.1f \\
-MS5 & GET & \path{/api/analitica/analitica/recaudacion-tuua-por-categoria} & E-5.1f \\
-MS5 & GET & \path{/api/analitica/analitica/vuelos-hora-punta-retrasados} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/recursos-mas-fallas?dias=7} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/retraso-promedio?tipo=Internacional} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/incidencias-combustible-por-aerolinea} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/recaudacion-tuua-por-categoria} & E-5.1f \\
+MS5 & GET & \path{/api/analitica/vuelos-hora-punta-retrasados} & E-5.1f \\
 \bottomrule
 \end{longtable}
 }
@@ -139,6 +145,15 @@ y se generó la compilación de producción. Vite advirtió que el paquete de
 Swagger supera 500 kB; no impidió compilar y queda como oportunidad de optimización.
 Estas comprobaciones no realizan una prueba de integración con AWS.
 
+El 23 de septiembre de 2026, tras corregir las rutas de MS4, se ejecutaron
+ocho pruebas locales, \texttt{npm run lint} y \texttt{npm run build} sin errores.
+En el despliegue se observaron cinco consultas de MS5 con HTTP 200 en Network,
+un ticket con check-in completado y un manifiesto del vuelo 9 sin aviso de
+parcialidad. La captura del manifiesto muestra dos pasajeros, pero no informa
+aeronave, equipaje ni recursos; esos campos no se presentan como validados.
+La procedencia y ejecución de Athena requieren evidencia adicional del equipo
+de datos.
+
 El registro \path{docs/VALIDACION_LOCAL.md} del frontend, del 21 de septiembre
 de 2026, documenta compilación y análisis estático correctos, recorridos con
 mocks de las cuatro vistas y revisión local del catálogo y diseño reducido.
@@ -148,21 +163,20 @@ La comprobación final exige repetir recorridos sin mocks y registrar las
 respuestas HTTP. La ejecución de Athena y las llamadas entre backends
 deben acreditarse con sus respectivos responsables.
 
-\subsection{Evidencias por completar}
+\subsection{Evidencias del despliegue}
 \label{sec:evidencias-frontend}
-Los espacios siguientes muestran un aviso mientras no exista una captura real.
-Los originales se guardarán en \path{docs/evidencias/frontend/} y las copias
-del informe en \path{informe/latex/imagenes/}.
+Las capturas se guardan en \path{docs/evidencias/frontend/} y sus copias para
+el informe en \path{informe/latex/imagenes/}. No se obtuvo evidencia de una
+transición PATCH de MS2 ni de escrituras de MS3; estas pruebas siguen pendientes.
 \evidenciafrontend{frontend-vuelos.png}{Consulta y detalle MS2 (E-5.1a).}{fig:fe-vuelos}
-\evidenciafrontend{frontend-estado-vuelo.png}{Transición válida y hora real MS2 (E-5.1b).}{fig:fe-estado}
-\evidenciafrontend{frontend-manifiesto.png}{Manifiesto y resumen MS4 (E-5.1c).}{fig:fe-manifiesto}
+\evidenciafrontend{frontend-manifiesto.png}{Manifiesto MS4 del vuelo 9; dos pasajeros y un check-in, con campos no informados (E-5.1c).}{fig:fe-manifiesto}
 \evidenciafrontend{frontend-ticket-checkin.png}{Emisión y check-in MS1 con vuelos MS2 (E-5.1d).}{fig:fe-ticket}
-\evidenciafrontend{frontend-infraestructura.png}{Recursos e incidencias MS3 (E-5.1e).}{fig:fe-infra}
-\evidenciafrontend{frontend-dashboard.png}{Cinco indicadores MS5 con datos de Athena (E-5.1f).}{fig:fe-dashboard}
-\evidenciafrontend{frontend-swagger.png}{Swagger agregado de los cinco servicios (E-5.1g).}{fig:fe-swagger}
+\evidenciafrontend{frontend-infraestructura.png}{Consulta de recursos e incidencias MS3 (E-5.1e).}{fig:fe-infra}
+\evidenciafrontend{frontend-dashboard.png}{Cinco indicadores recibidos de MS5; origen Athena por acreditar (E-5.1f).}{fig:fe-dashboard}
+\evidenciafrontend{frontend-swagger.png}{Catálogo MS1--MS5 con contrato MS1 cargado (E-5.1g).}{fig:fe-swagger}
 \evidenciafrontend{frontend-responsive.png}{Vista móvil sin desbordamiento horizontal (E-5.1h).}{fig:fe-responsive}
-\evidenciafrontend{frontend-network.png}{Cobertura REST en Network (E-5.2).}{fig:fe-network}
-\evidenciafrontend{frontend-amplify.png}{URL HTTPS y operación real desde Amplify (E-5.3).}{fig:fe-amplify}
+\evidenciafrontend{frontend-network.png}{Cinco solicitudes GET de MS5 con HTTP 200 en Network (E-5.2).}{fig:fe-network}
+\evidenciafrontend{frontend-amplify.png}{Implementación exitosa y dominio HTTPS en Amplify (E-5.3).}{fig:fe-amplify}
 
 \subsection{Fuentes}
 La descripción se basa en el README del frontend, \path{src/api/client.ts},
