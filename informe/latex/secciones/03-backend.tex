@@ -166,112 +166,293 @@ incluida la validación MS1$\to$MS2 de vuelo inexistente y cancelado. Smoke
 end-to-end completo y log MS1$\to$MS2 en \texttt{smoke\_test.txt} y
 \texttt{log\_ms1\_ms2.txt} del repositorio.
 
+
+
+
+
+
+
+
 \subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
-MS2 es responsable del dominio operacional del aeropuerto: vuelos,
-aerolíneas, aeronaves, asientos y la tripulación asignada a cada vuelo.
-Se implementa en Java 21 con Spring Boot 4.0.8, persistencia con
-Spring Data JPA sobre PostgreSQL 16, migraciones versionadas con
-Flyway y documentación OpenAPI con springdoc.
+
+MS2 es responsable del dominio operacional del aeropuerto Jorge Chávez:
+vuelos, aerolíneas, aeronaves, asientos y la tripulación asignada a cada
+vuelo. Se implementa en Java 21 con Spring Boot 4.0.8, Spring Data JPA
+como ORM, Flyway para las migraciones versionadas y PostgreSQL 16. La API
+corre en el puerto interno 8002 bajo el prefijo público
+\texttt{/api/vuelos} (nginx). La documentación OpenAPI se expone mediante
+Swagger-UI en \texttt{/docs}.
 
 \begin{figure}[htbp]
   \centering
   \IfFileExists{imagenes/swagger-ms2.png}{%
     \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms2.png}%
   }{%
-    \fbox{\parbox{0.90\linewidth}{\centering\textbf{Swagger-UI de MS2}\par
+    \fbox{\parbox{0.90\linewidth}{\centering
+    \textbf{Swagger-UI de MS2}\\
     Copiar \texttt{swagger-ms2.png} a \texttt{imagenes/} y recompilar.}}%
   }
-  \caption{Swagger-UI de MS2 (\texttt{/docs}) por la URL pública. Evidencia E-3.2.1.}
+  \caption{Swagger-UI de MS2 (\texttt{/docs}) por la URL pública.
+  Evidencia E-3.2.1.}
   \label{fig:swagger-ms2}
 \end{figure}
 
-El modelo de datos tiene ocho tablas: \texttt{aerolinea}, \texttt{aeronave},
-\texttt{asiento}, \texttt{vuelo}, \texttt{empleado}, \texttt{tripulacion},
-\texttt{operativo\_tierra} y \texttt{opera\_tripulacion}. Las relaciones
-principales son \texttt{aerolinea} 1--N \texttt{vuelo}, \texttt{aeronave}
-1--N \texttt{vuelo}, \texttt{aeronave} 1--N \texttt{asiento} (entidad
-débil) y \texttt{tripulacion} N--M \texttt{vuelo} vía la tabla puente
-\texttt{opera\_tripulacion}. Las claves naturales del modelo monolítico
-se conservan: \texttt{aerolinea.ruc} y \texttt{aeronave.placa}, en vez
-de identificadores autogenerados.
+\paragraph{Modelo de datos.}
+
+El esquema PostgreSQL tiene ocho tablas que representan el dominio
+operacional de MS2. Se conservan las claves naturales del modelo
+monolítico para \texttt{aerolinea} y \texttt{aeronave}: el RUC identifica
+a la aerolínea y la placa identifica a la aeronave, en lugar de utilizar
+identificadores autogenerados.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{p{0.19\textwidth}p{0.23\textwidth}p{0.35\textwidth}X}
+\toprule
+Tabla (PK) & Columnas principales & Relación / restricciones \\
+\midrule
+
+\texttt{aerolinea} (\texttt{ruc}) &
+\texttt{nombre}, datos de identificación &
+1--N con \texttt{vuelo}; conserva el RUC como clave primaria \\
+
+\texttt{aeronave} (\texttt{placa}) &
+datos de identificación, \texttt{ruc} &
+1--N con \texttt{vuelo} y 1--N con \texttt{asiento}; conserva la placa
+como clave primaria \\
+
+\texttt{asiento} (\texttt{id}) &
+\texttt{\seqsplit{aeronave\_placa}}, número, clase, estado &
+Entidad débil dependiente de \texttt{aeronave}; cada asiento pertenece
+a una aeronave \\
+
+\texttt{vuelo} (\texttt{id}) &
+\texttt{numero}, \texttt{\seqsplit{estado\_vuelo}}, \texttt{tipo},
+\texttt{fecha}, \texttt{\seqsplit{hora\_real}} &
+Pertenece a una \texttt{aerolinea} y una \texttt{aeronave}; rango
+compartido 1--25\,000 entre servicios \\
+
+\texttt{empleado} (\texttt{id}) &
+datos personales y laborales &
+Superclase de identidad del personal del aeropuerto; 1:1 IsA con
+\texttt{tripulacion} y \texttt{\seqsplit{operativo\_tierra}} \\
+
+\texttt{tripulacion} (\texttt{\seqsplit{empleado\_id}}) &
+\texttt{\seqsplit{num\_licencia}} &
+Subtipo de \texttt{empleado} mediante \texttt{@MapsId}; participa en
+asignaciones N--M con \texttt{vuelo} \\
+
+\texttt{\seqsplit{operativo\_tierra}} (\texttt{\seqsplit{empleado\_id}}) &
+\texttt{\seqsplit{area\_operativa}} &
+Subtipo de \texttt{empleado} mediante \texttt{@MapsId}; identidad
+compartida con \texttt{empleado} \\
+
+\texttt{\seqsplit{opera\_tripulacion}}
+(\texttt{\seqsplit{vuelo\_id}}, \texttt{\seqsplit{tripulacion\_empleado\_id}}) &
+claves de vuelo y tripulación &
+Tabla puente N--M entre \texttt{vuelo} y \texttt{tripulacion}; PK
+compuesta modelada mediante \texttt{@IdClass} \\
+
+\bottomrule
+\end{tabularx}
+
+\caption{Esquema PostgreSQL de MS2 (8 tablas).}
+\label{tab:ms2-db}
+\end{table}
 
 \texttt{empleado} reemplaza a la superclase \texttt{Persona} del modelo
-original para el personal del aeropuerto (identidad propia del
-servicio, ver Sección~\ref{sec:transformaciones}), con dos subtipos
-modelados como patrón IsA de JPA (\texttt{@MapsId}): \texttt{tripulacion}
-(\texttt{num\_licencia}) y \texttt{operativo\_tierra}
-(\texttt{area\_operativa}), cada una con su propia primary key
-compartida con \texttt{empleado.id}. La tabla puente
-\texttt{opera\_tripulacion} usa una clave primaria compuesta
-(\texttt{vuelo\_id}, \texttt{tripulacion\_empleado\_id}), modelada en
-JPA con \texttt{@IdClass} sobre una clase auxiliar sin correspondencia
-a ninguna tabla propia.
+original para el personal propio de este servicio. Sus dos subtipos,
+\texttt{tripulacion} y \texttt{operativo\_tierra}, utilizan el patrón
+IsA de JPA mediante \texttt{@MapsId}, por lo que sus claves primarias son
+compartidas con \texttt{empleado.id}. La tabla
+\texttt{opera\_tripulacion} utiliza una clave primaria compuesta por
+\texttt{vuelo\_id} y \texttt{tripulacion\_empleado\_id}; en JPA se
+representa mediante \texttt{@IdClass}, sin crear una entidad de negocio
+adicional.
 
-Los endpoints, bajo el prefijo \texttt{/api/vuelos}, cubren CRUD de
-\texttt{aerolineas} (PK \texttt{ruc}) y \texttt{aeronaves} (PK
-\texttt{placa}, con \texttt{GET /aeronaves/\{placa\}/asientos}), CRUD de
-\texttt{vuelos} con filtros combinables \texttt{?num=\&estado=\&tipo=\&fecha=}
-implementados con \texttt{JpaSpecificationExecutor} (construye la
-consulta SQL dinámicamente según qué parámetros llegan, sin un método
-por cada combinación), consulta de \texttt{empleados} por id o por
-\texttt{tipo}, y asignación N--M de tripulación a un vuelo
-(\texttt{POST}/\texttt{GET /vuelos/\{id\}/tripulacion}).
+El diagrama E/R de la base PostgreSQL se muestra en la
+Figura~\ref{fig:er-ms2}.
 
-La Figura~\ref{fig:swagger-ms2} muestra el Swagger-UI navegable con los
-15 endpoints implementados.
+\begin{figure}[htbp]
+  \centering
+  \IfFileExists{imagenes/ms2-postgres-er.png}{%
+    \includegraphics[width=0.95\linewidth]{imagenes/ms2-postgres-er.png}%
+  }{%
+    \fbox{\parbox{0.90\linewidth}{\centering
+    \textbf{E/R de MS2}\\
+    Copiar \texttt{ms2-postgres-er.png} a \texttt{imagenes/} y recompilar.}}%
+  }
+  \caption{Diagrama Entidad-Relación de PostgreSQL (MS2), ocho tablas.
+  Evidencia E-3b.1.}
+  \label{fig:er-ms2}
+\end{figure}
+
+\paragraph{Endpoints implementados.}
+
+Bajo la base pública \texttt{/api/vuelos}, MS2 expone 15 endpoints para
+la administración de aerolíneas, aeronaves, vuelos, empleados y
+asignaciones de tripulación:
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{p{0.06\textwidth}p{0.33\textwidth}X}
+\toprule
+Método & Ruta & Descripción \\
+\midrule
+
+GET & \path|/health| &
+Estado del servicio. \\
+
+GET/POST & \path|/aerolineas| &
+Lista y crea aerolíneas; la PK es \texttt{ruc}. \\
+
+GET/PUT/DELETE & \path|/aerolineas/{ruc}| &
+Consulta, actualiza o elimina una aerolínea. \\
+
+GET/POST & \path|/aeronaves| &
+Lista y crea aeronaves; la PK es \texttt{placa}. \\
+
+GET/PUT/DELETE & \path|/aeronaves/{placa}| &
+Consulta, actualiza o elimina una aeronave. \\
+
+GET & \path|/aeronaves/{placa}/asientos| &
+Lista los asientos asociados a una aeronave. \\
+
+GET/POST & \path|/vuelos| &
+Lista y crea vuelos. Soporta filtros combinables
+\texttt{num}, \texttt{estado}, \texttt{tipo} y \texttt{fecha}. \\
+
+GET/PUT/DELETE & \path|/vuelos/{id}| &
+Consulta, actualiza o elimina un vuelo. \\
+
+PATCH & \path|/vuelos/{id}/estado| &
+Actualiza el estado del vuelo respetando la máquina de estados definida. \\
+
+GET & \path|/vuelos/{id}/exists| &
+Validación liviana de existencia y estado de un vuelo para otros
+microservicios. \\
+
+GET & \path|/empleados/{id}| &
+Consulta un empleado por identificador. \\
+
+GET & \path|/empleados?tipo={tipo}| &
+Consulta empleados filtrando por tipo. \\
+
+POST & \path|/vuelos/{id}/tripulacion| &
+Asigna un miembro de tripulación a un vuelo. \\
+
+GET & \path|/vuelos/{id}/tripulacion| &
+Lista la tripulación asignada a un vuelo. \\
+
+\bottomrule
+\end{tabularx}
+
+\caption{Endpoints de MS2.}
+\label{tab:ms2-endpoints}
+\end{table}
+
+Los filtros de vuelos se implementan mediante
+\texttt{JpaSpecificationExecutor}, permitiendo construir dinámicamente
+la consulta SQL a partir de los parámetros recibidos, sin definir un
+método de repositorio independiente para cada combinación de filtros.
+
+\paragraph{Máquina de estados de vuelos.}
 
 \texttt{PATCH /vuelos/\{id\}/estado} implementa una máquina de estados
-explícita (\texttt{EstadoVueloMaquina}) sobre el enum
-\texttt{estado\_vuelo}: \texttt{Programado} puede pasar a
-\texttt{Embarcando}, \texttt{Retrasado} o \texttt{Cancelado};
-\texttt{Embarcando} a \texttt{Despegado}, \texttt{Retrasado} o
-\texttt{Cancelado}; \texttt{Retrasado} a \texttt{Embarcando},
-\texttt{Despegado} o \texttt{Cancelado}; \texttt{Despegado} únicamente a
-\texttt{Aterrizado}; \texttt{Aterrizado} y \texttt{Cancelado} son
-estados finales sin transiciones salientes. Una transición fuera de esa
-tabla responde \texttt{422 TRANSICION\_ESTADO\_INVALIDA}, siguiendo el
-contrato de errores común. Al transicionar a \texttt{Despegado},
-\texttt{hora\_real} se registra automáticamente con la hora del
+explícita mediante \texttt{EstadoVueloMaquina}. Las transiciones
+permitidas son:
+
+\begin{itemize}
+  \item \texttt{Programado} $\to$ \texttt{Embarcando},
+  \texttt{Retrasado} o \texttt{Cancelado}.
+  \item \texttt{Embarcando} $\to$ \texttt{Despegado},
+  \texttt{Retrasado} o \texttt{Cancelado}.
+  \item \texttt{Retrasado} $\to$ \texttt{Embarcando},
+  \texttt{Despegado} o \texttt{Cancelado}.
+  \item \texttt{Despegado} $\to$ \texttt{Aterrizado}.
+  \item \texttt{Aterrizado} y \texttt{Cancelado} son estados finales.
+\end{itemize}
+
+Una transición no contemplada en la máquina responde
+\texttt{422 TRANSICION\_ESTADO\_INVALIDA}, siguiendo el contrato de
+errores común. Al realizar la transición a \texttt{Despegado},
+\texttt{hora\_real} se registra automáticamente utilizando la hora del
 servidor.
 
-\texttt{GET /vuelos/\{id\}/exists} es el endpoint liviano de validación
-consumido por MS1 (al emitir un ticket) y MS3 (al registrar una
-incidencia o asignación que referencia un vuelo): responde
-\texttt{200 \{exists, estado\}} si el vuelo existe y \texttt{404} en
-caso contrario, evitando que los servicios consumidores traigan el
-objeto completo solo para verificar existencia. Es el mismo mecanismo
-de referencia suave descrito en la Sección~\ref{sec:transformaciones}.
+\paragraph{Consumo entre servicios (MS1/MS3 $\to$ MS2).}
 
-El consumo real de este endpoint está verificado con logs de
-producción: MS1 lo invoca al emitir un ticket
-(\texttt{GET /api/vuelos/1/exists} $\to$ \texttt{200}, previo a un
-\texttt{POST /tickets} exitoso) y MS3 lo invoca al validar un vuelo
-inexistente, traduciendo la respuesta \texttt{404} de MS2 a
-\texttt{502 DEPENDENCIA\_ERROR} en su propio contrato (ver
-\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}).
+\texttt{GET /vuelos/\{id\}/exists} es el endpoint liviano utilizado por
+los servicios consumidores para validar referencias a vuelos sin
+descargar el objeto completo. Responde
+\texttt{200 \{exists, estado\}} cuando el vuelo existe y
+\texttt{404} cuando no existe.
 
-Como el rango de \texttt{vuelo.id} es fijo y compartido entre servicios
-(1--25\,000, ver \texttt{contratos/enums.md}), el siguiente id se
-calcula con \texttt{SELECT COALESCE(MAX(id), 0) + 1} vía \texttt{@Query}
-en el repositorio, en vez de traer todas las filas a memoria. Es
-suficiente para el alcance del proyecto (pruebas manuales, sin
-escrituras concurrentes reales); se documenta como limitación conocida,
-no como pendiente.
+El consumo real en producción está verificado mediante logs. MS1 invoca
+este endpoint al emitir un ticket, registrando
+\texttt{GET /api/vuelos/1/exists $\to$ 200} antes de un
+\texttt{POST /tickets} exitoso. MS3 también consulta el endpoint al
+validar un vuelo inexistente y traduce la respuesta \texttt{404} de MS2
+a \texttt{502 DEPENDENCIA\_ERROR} en su propio contrato. La evidencia
+completa se encuentra en
+\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}.
 
-El manejo de errores sigue el contrato común mediante un
-\texttt{@RestControllerAdvice} único (\texttt{GlobalExceptionHandler})
-que traduce las excepciones de dominio a los códigos acordados:
-\texttt{VALIDACION} (400), \texttt{NO\_ENCONTRADO} (404),
-\texttt{CONFLICTO\_ESTADO} (409) y \texttt{TRANSICION\_ESTADO\_INVALIDA}
-(422).
+El identificador de vuelo constituye una referencia compartida entre
+servicios. Debido a que el rango de \texttt{vuelo.id} está fijado entre
+1 y 25\,000 en \texttt{contratos/enums.md}, la creación del siguiente
+vuelo utiliza
+\texttt{SELECT COALESCE(MAX(id), 0) + 1} mediante \texttt{@Query},
+evitando cargar todas las filas en memoria. Esta estrategia es
+suficiente para el alcance actual del proyecto, basado en pruebas
+manuales y sin escrituras concurrentes reales, y se documenta como una
+limitación conocida.
 
-\textbf{Carga masiva.} El generador de datos ficticios
-(\texttt{seed/generar\_seed.py}) usa \texttt{Faker} con \texttt{SEED}
-fijo e inserciones por lote (\texttt{execute\_values} de psycopg2) para
-poblar 5 aerolíneas, 100 aeronaves, 21\,000 asientos, 300 empleados de
-tripulación, 20\,500 vuelos y sus asignaciones N--M de tripulación. Se
-empaqueta como contenedor Docker independiente y se ejecuta una sola
-vez contra la base de datos objetivo.
+\paragraph{Manejo de errores.}
+
+El manejo de errores se centraliza mediante un único
+\texttt{@RestControllerAdvice}, implementado en
+\texttt{GlobalExceptionHandler}. Las excepciones de dominio se traducen
+al contrato común con los siguientes códigos:
+
+\begin{itemize}
+  \item \texttt{VALIDACION}: 400.
+  \item \texttt{NO\_ENCONTRADO}: 404.
+  \item \texttt{CONFLICTO\_ESTADO}: 409.
+  \item \texttt{TRANSICION\_ESTADO\_INVALIDA}: 422.
+\end{itemize}
+
+\paragraph{Carga masiva y volumen.}
+
+El generador de datos ficticios
+(\texttt{seed/generar\_seed.py}) utiliza \texttt{Faker} con un
+\texttt{SEED} fijo e inserciones por lote mediante
+\texttt{execute\_values} de \texttt{psycopg2}. La carga genera
+5 aerolíneas, 100 aeronaves, 21\,000 asientos, 300 empleados de
+tripulación, 20\,500 vuelos y sus asignaciones N--M de tripulación.
+
+El generador se empaqueta como un contenedor Docker independiente y se
+ejecuta una sola vez contra la base de datos objetivo, permitiendo
+reproducir la carga inicial de MS2 de manera determinista.
+
+\paragraph{Pruebas.}
+
+Las pruebas de MS2 utilizan el perfil de pruebas con PostgreSQL/H2
+según el escenario y cubren las operaciones principales del dominio:
+CRUD de aerolíneas, aeronaves y vuelos, consultas de empleados,
+asignación de tripulación, filtros de vuelos, transiciones de estado,
+validación de vuelos mediante \texttt{/exists} y respuestas del
+contrato común de errores.
+
+
+
+
+
+
+
+
 
 \subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
 MS3 gestiona la infraestructura aeroportuaria: el inventario de
