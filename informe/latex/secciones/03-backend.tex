@@ -83,6 +83,9 @@ por cada combinación), consulta de \texttt{empleados} por id o por
 \texttt{tipo}, y asignación N--M de tripulación a un vuelo
 (\texttt{POST}/\texttt{GET /vuelos/\{id\}/tripulacion}).
 
+La Figura~\ref{fig:swagger-ms2} muestra el Swagger-UI navegable con los
+15 endpoints implementados.
+
 \texttt{PATCH /vuelos/\{id\}/estado} implementa una máquina de estados
 explícita (\texttt{EstadoVueloMaquina}) sobre el enum
 \texttt{estado\_vuelo}: \texttt{Programado} puede pasar a
@@ -105,8 +108,13 @@ caso contrario, evitando que los servicios consumidores traigan el
 objeto completo solo para verificar existencia. Es el mismo mecanismo
 de referencia suave descrito en la Sección~\ref{sec:transformaciones}.
 
-La Figura~\ref{fig:swagger-ms2} muestra el Swagger-UI navegable con los
-15 endpoints implementados.
+El consumo real de este endpoint está verificado con logs de
+producción: MS1 lo invoca al emitir un ticket
+(\texttt{GET /api/vuelos/1/exists} $\to$ \texttt{200}, previo a un
+\texttt{POST /tickets} exitoso) y MS3 lo invoca al validar un vuelo
+inexistente, traduciendo la respuesta \texttt{404} de MS2 a
+\texttt{502 DEPENDENCIA\_ERROR} en su propio contrato (ver
+\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}).
 
 Como el rango de \texttt{vuelo.id} es fijo y compartido entre servicios
 (1--25\,000, ver \texttt{contratos/enums.md}), el siguiente id se
