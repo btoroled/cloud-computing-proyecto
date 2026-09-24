@@ -44,6 +44,13 @@ Se implementa en Java 21 con Spring Boot 4.0.8, persistencia con
 Spring Data JPA sobre PostgreSQL 16, migraciones versionadas con
 Flyway y documentación OpenAPI con springdoc.
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms2.png}
+  \caption{Swagger-UI de MS2 (\texttt{/docs}) por la URL pública. Evidencia E-3.2.1.}
+  \label{fig:swagger-ms2}
+\end{figure}
+
 El modelo de datos tiene ocho tablas: \texttt{aerolinea}, \texttt{aeronave},
 \texttt{asiento}, \texttt{vuelo}, \texttt{empleado}, \texttt{tripulacion},
 \texttt{operativo\_tierra} y \texttt{opera\_tripulacion}. Las relaciones
@@ -97,6 +104,9 @@ incidencia o asignación que referencia un vuelo): responde
 caso contrario, evitando que los servicios consumidores traigan el
 objeto completo solo para verificar existencia. Es el mismo mecanismo
 de referencia suave descrito en la Sección~\ref{sec:transformaciones}.
+
+La Figura~\ref{fig:swagger-ms2} muestra el Swagger-UI navegable con los
+15 endpoints implementados.
 
 Como el rango de \texttt{vuelo.id} es fijo y compartido entre servicios
 (1--25\,000, ver \texttt{contratos/enums.md}), el siguiente id se
