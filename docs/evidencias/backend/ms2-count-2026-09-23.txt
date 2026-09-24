@@ -1,0 +1,17 @@
+Evidencia: carga masiva MS2 (PostgreSQL) contra la VM-DB real
+Fecha: 2026-09-23
+Metodo: seed/generar_seed.py (Mariano, generador propio con Faker, SEED=42) corrido como
+contenedor Docker en VM-PROD-1, apuntando a DB_HOST=10.0.10.170 (VM-DB real).
+
+Salida del generador:
+  5 aerolineas
+  100 aeronaves
+  21000 asientos (100 x 210)
+  300 empleados/tripulacion
+  20500 vuelos
+
+Verificacion independiente (psql -c "SELECT COUNT(*) FROM vuelo/asiento"):
+  vuelos: 20500
+  asientos: 21000
+
+Cumple el requisito de >=20000 registros en al menos 1 tabla por BD.

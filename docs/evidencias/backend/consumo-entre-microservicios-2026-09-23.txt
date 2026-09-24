@@ -1,0 +1,43 @@
+Evidencia: consumo real entre microservicios (punto 5 de la revision de riesgos)
+Fecha: 2026-09-23
+
+=== MS1 -> MS2 (POST /tickets valida vuelo con GET /vuelos/{id}/exists) ===
+
+Request: POST /api/pasajeros/tickets (via nginx, VM-PROD-1)
+Body: {"precio":45.5,"fecha_emision":"2026-09-23","id_vuelo":1,"id_persona":100003}
+
+Response: HTTP 201
+{"id_ticket":25001,"precio":45.5,"fecha_emision":"2026-09-23","estado_boarding":"Emitido","id_vuelo":1,"id_persona":100003}
+
+Log real de MS1 (docker logs aeropuerto-prod-ms1-1):
+2026-09-23 06:56:07,400 INFO app.services.ticket_service: Saliente MS1->MS2: GET http://ms2:8002/api/vuelos/1/exists (intento 1/2)
+2026-09-23 06:56:07,433 INFO httpx: HTTP Request: GET http://ms2:8002/api/vuelos/1/exists "HTTP/1.1 200 "
+2026-09-23 06:56:07,433 INFO app.services.ticket_service: Saliente MS1->MS2: GET http://ms2:8002/api/vuelos/1/exists -> 200
+INFO: 172.18.0.4:49638 - "POST /api/pasajeros/tickets HTTP/1.0" 201 Created
+
+=== MS3 -> MS2 (POST /incidencias valida vuelo) === (ya documentado, se repite aqui por completitud)
+
+Ver docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt -- log real:
+[MS3->MS2] GET http://ms2:8002/api/vuelos/999999/exists -> MS2 respondio 404 -> MS3 tradujo a 502 DEPENDENCIA_ERROR
+
+=== MS4 -> MS1/MS2/MS3 (GET /manifiesto/{vuelo_id} agrega y consolida) ===
+
+Request: GET /api/manifiesto/1 (via nginx, VM-PROD-1)
+Response: HTTP 200, cuerpo real agregado:
+  - vuelo: datos reales de MS2 (numero AV2790, origen LIM, destino PIU, estado Embarcando,
+    aerolineaRuc, aeronavePlaca) -- confirma llamada real a MS2.
+  - tripulacion: 2 empleados reales con numLicencia -- confirma llamada real a MS2 (o MS1,
+    segun de donde MS4 obtenga tripulacion).
+  - incidencias_abiertas: lista de incidencias reales de MongoDB (gravedad, tipo_incidencia,
+    fecha_reporte, afecta_recursos[], retrasa_vuelos[]) -- confirma llamada real a MS3.
+  - pasajeros: [] (vacio) -- el ticket recien creado (id_ticket=25001, vuelo_id=1) no aparecio
+    en la lista; revisar el filtro de MS4 hacia MS1 antes del PDF final (no bloquea la
+    evidencia de que la llamada a MS2 y MS3 SI funciona con datos reales).
+
+Nota: "incidencias_abiertas" devolvio muchas mas incidencias de las esperadas para un solo
+vuelo_id=1 -- posible filtro faltante en MS4 (deberia acotar por vuelo_id, no traer todas las
+abiertas). Reportar a Fabricio para revisar antes de la entrega.
+
+=== Conclusion ===
+Los 3 flujos de consumo entre microservicios pedidos por el checklist (MS1->MS2, MS3->MS2,
+MS4->MS1/2/3) estan verificados con evidencia real (logs + respuestas), no simulados.

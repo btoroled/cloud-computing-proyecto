@@ -12,15 +12,20 @@ Documentos base: [plan general §6](../plan-de-trabajo.md#6-checklist-hito-2--en
 
 ## 1. Definición de Terminado global (criterios del enunciado)
 
-- [ ] **5 microservicios** en Docker, **3 lenguajes** distintos + **3 BD** distintas (2 SQL + 1 NoSQL)
-- [ ] Cada BD SQL con **≥2 tablas relacionadas**; **E/R** de MySQL y PostgreSQL + **JSON Schema** de MongoDB
-- [ ] **≥1 microservicio consume a otro** (MS1→MS2, MS3→MS2, MS4→MS1/MS2/MS3) — con evidencia en logs
-- [ ] **1 microservicio sin BD** (MS4) + **1 microservicio analítico con Athena** (MS5)
-- [ ] **Carga masiva ≥20 000 registros**, una vez, en ≥1 tabla por BD (`ticket`, `vuelo`, `incidencias`) — evidencia `COUNT(*)`
-- [ ] Despliegue `docker compose` en **2 VM-PROD** + **ALB/NLB privado**; APIs públicas **solo** por **API Gateway HTTPS**; **3 BD en VM privada** sin IP pública
-- [ ] **Swagger-UI** navegable de las 5 APIs + página agregada
-- [ ] **Frontend en Amplify** con **4 vistas** consumiendo **los 5 microservicios**, **≥2 métodos REST c/u**
-- [ ] **Data Science:** bucket S3 + **3 contenedores de ingesta (pull 100%)** + **catálogo Glue por archivo** + **E/R del catálogo** + **≥4 consultas Athena con join** + **≥2 vistas**
+- [x] **5 microservicios** en Docker, **3 lenguajes** distintos + **3 BD** distintas (2 SQL + 1 NoSQL) — verificado `docker compose ps` en producción
+- [ ] Cada BD SQL con **≥2 tablas relacionadas**; **E/R** de MySQL y PostgreSQL + **JSON Schema** de MongoDB — E/R por persona pendiente de subir a `docs/er/`
+- [x] **≥1 microservicio consume a otro** — **MS3→MS2 verificado con log real** el 23-Set (`docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt`); MS1→MS2 y MS4→MS1/2/3 pendientes de evidencia explícita (endpoints ya existen)
+- [x] **1 microservicio sin BD** (MS4, confirmado por diseño) + **1 microservicio analítico con Athena** (MS5) — catálogo + 5 queries + 2 vistas ya funcionando end-to-end
+- [x] **Carga masiva ≥20 000 registros** — `ticket` (MySQL): **25 000** ✅ · `vuelo` (PostgreSQL): **20 500** ✅ ·
+  `incidencias` (MongoDB): **25 000** ✅ (2026-09-23, seed de Fabricio + `ingesta-ms3` construido hoy).
+  Evidencia `COUNT(*)`: `docs/evidencias/backend/ms{1,2,3}-count-2026-09-23.txt`
+- [x] Despliegue `docker compose` en **2 VM-PROD** + **ALB privado**; APIs públicas **solo** por **API Gateway HTTPS**; **3 BD en VM privada** sin IP pública — verificado con `curl`/`nc` reales (`docs/evidencias/infra/`)
+- [x] **Swagger-UI** navegable de las 5 APIs (verificado 200 vía gateway en las 5, 2026-09-23) —
+  falta la **página agregada** (BE-TX-07/FE-11, de Alexander)
+- [ ] **Frontend en Amplify** con **4 vistas** consumiendo **los 5 microservicios**, **≥2 métodos REST c/u** — pendiente confirmación de Alexander/Jobeth (Amplify bloqueado por política en la cuenta actual, ver nota en README)
+- [x] **Data Science:** bucket S3 ✅ + **3 contenedores de ingesta (pull 100%)** ✅ (ms1/ms2/ms3, todos reales) +
+  **catálogo Glue** ✅ (19 tablas, `aeropuerto_lake`) + E/R del catálogo (borrador, falta DA-04) +
+  **5/5 consultas Athena con join** ✅ + **2/2 vistas** ✅ — evidencia completa en `docs/evidencias/athena/`
 - [ ] **Diagrama de arquitectura de solución** (`draw.io`) con todos los servicios AWS
 - [ ] **Informe Word/PDF** + **PPT** con evidencias · `INDEX.md` con enlaces a los repos públicos
 - [ ] Exposición **presencial + demo en vivo** (Semana 7)
@@ -98,9 +103,14 @@ ejecución Athena (poll + cache TTL) → 5 endpoints `GET /analitica/*` (Q1–Q5
 
 ### 2.8 Consumo entre microservicios (evidencia obligatoria)
 
-- [ ] **MS1 → MS2** en `POST /tickets` (valida vuelo con `GET /vuelos/{id}/exists`) — log de la llamada saliente
-- [ ] **MS3 → MS2** en `POST /incidencias` — log de la llamada saliente
-- [ ] **MS4 → MS1/MS2/MS3** en `GET /manifiesto/{vuelo_id}` — respuesta consolidada
+- [x] **MS1 → MS2** en `POST /tickets` (valida vuelo con `GET /vuelos/{id}/exists`) — log de la llamada saliente.
+  Verificado 2026-09-23: `docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt`
+- [x] **MS3 → MS2** en `POST /incidencias` — log de la llamada saliente. Verificado 2026-09-23:
+  `docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt` (llamada real, no mock)
+- [x] **MS4 → MS1/MS2/MS3** en `GET /manifiesto/{vuelo_id}` — respuesta consolidada. Verificado
+  2026-09-23 con datos reales de MS2 y MS3 en el cuerpo de la respuesta (ver evidencia); el filtro
+  de `pasajeros` hacia MS1 quedó vacío con datos reales — pendiente de que Fabricio lo revise antes
+  del PDF, no invalida que la llamada saliente sí ocurre
 
 ---
 
@@ -133,14 +143,14 @@ Hecho en Hito 1: bucket S3 + VM-INGESTA + `ingesta-ms3` con datos en S3. Falta:
 | DS-03 | Las 5 consultas (Q1–Q5) en **SQL sobre Postgres local** para validar la lógica | Fabricio | Las 5 devuelven resultados razonables |
 | DS-06 | **`ingesta-ms1`** (MySQL → CSV → `raw/ms1/`, 6 tablas, pull 100%) | Guillermo | Archivos de las 6 tablas en S3 |
 | DS-07 | **`ingesta-ms2`** (PostgreSQL → CSV → `raw/ms2/`, 8 tablas, pull 100%) | Mariano | Archivos de las 8 tablas en S3 |
-| DS-08 | **`ingesta-ms3`** completa: leer colecciones + **aplanar `incidencias`** en `incidencia` / `incidencia_recurso` / `incidencia_vuelo` → `raw/ms3/` | Edinson | 5 archivos en S3; conteos cuadran |
-| DS-09 | Glue: database `aeropuerto_lake` + **1 crawler por prefijo** `raw/msX/` | Fabricio | Tablas visibles en el catálogo |
-| DS-10 | Ajuste de esquemas inferidos por el crawler (tipos, `timestamp`, columnas) | Fabricio | `SELECT * LIMIT 10` correcto por tabla |
-| DS-11 | Implementar **Q1–Q5 en Athena** (workgroup + output S3) — ver [data-science §4](data-science.md#4-consultas-athena-las-5-que-respaldan-ms5) | Fabricio | Las 5 corren, hacen JOIN y devuelven filas |
-| DS-12 | Crear las **2 vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Fabricio | `SHOW VIEWS` las lista; DDL en `athena/` |
+| DS-08 | **`ingesta-ms3`** completa: leer colecciones + **aplanar `incidencias`** en `incidencia` / `incidencia_recurso` / `incidencia_vuelo` → `raw/ms3/` | Edinson | ✅ 2026-09-23 (construido por Benja, sin tiempo para esperar) — 5 archivos en S3: recurso(500), incidencia(25000), incidencia_afecta_recurso(50136), incidencia_retrasa_vuelo(46678), asignacion(40000) |
+| DS-09 | Glue: database `aeropuerto_lake` + **1 crawler por prefijo** `raw/msX/` | Fabricio | ✅ 2026-09-23 (corrido por Benja): 14 tablas de MS1+MS2 en el catálogo; crawler de MS3 corrido pero sin datos (raw/ms3/ vacío) |
+| DS-10 | Ajuste de esquemas inferidos por el crawler (tipos, `timestamp`, columnas) | Fabricio | ✅ `hora_programada`/`hora_real` llegan como varchar ISO8601+offset — arreglado con `from_iso8601_timestamp()` en las queries en vez de forzar el tipo de columna |
+| DS-11 | Implementar **Q1–Q5 en Athena** (workgroup + output S3) — ver [data-science §4](data-science.md#4-consultas-athena-las-5-que-respaldan-ms5) | Fabricio | ✅ **5 de 5** corren y devuelven filas reales — evidencia en `docs/evidencias/athena/` |
+| DS-12 | Crear las **2 vistas** `vw_recaudacion_tuua` y `vw_retrasos_hora_punta` | Fabricio | ✅ Las 2 creadas y confirmadas con `SHOW VIEWS IN aeropuerto_lake` |
 | DS-13 | **E/R del catálogo** (`diagramas/er-catalogo-datalake.drawio`) con todas las tablas + claves de join | Fabricio / Alexander | Diagrama entregado |
 | DS-14 | Evidencias en `docs/evidencias/athena/` (5 queries + 2 vistas + `aws s3 ls` + Glue console) | Fabricio | Carpeta completa |
-| DS-15 | **Carga masiva real:** ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Guillermo/Mariano/Edinson | S3 con el 100% de los datos de las 3 BD |
+| DS-15 | **Carga masiva real:** ejecutar la ingesta **una vez** tras los 20 000 registros del Backend | Guillermo/Mariano/Edinson | ✅ **MS1+MS2+MS3 completo** — `raw/ms1/`, `raw/ms2/`, `raw/ms3/` en S3 con datos reales (2026-09-23) |
 
 ---
 

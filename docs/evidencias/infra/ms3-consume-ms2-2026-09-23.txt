@@ -1,0 +1,18 @@
+Evidencia: MS3 -> MS2 (consumo entre microservicios)
+Fecha: 2026-09-23
+Request: POST /api/infra/incidencias (vía nginx en VM-PROD-1) con retrasa_vuelos=[{vuelo_id:999999}]
+
+Respuesta HTTP:
+{"error":{"code":"DEPENDENCIA_ERROR","message":"MS2 respondió con error al validar el vuelo.","status":502,"details":[{"field":"ms2","issue":"MS2 respondió 404 en /api/vuelos/999999/exists"}],"service":"ms3-infraestructura-api","timestamp":"2026-09-23T06:12:11.145Z"}}
+HTTP:502
+
+Log de MS3 (docker logs aeropuerto-prod-ms3-1):
+MongoDB conectado exitosamente
+MS3 corriendo en el puerto 8003
+[MS3->MS2] GET http://ms2:8002/api/vuelos/999999/exists
+
+Interpretación: MS3 sí hizo la llamada saliente real a MS2 (no un mock). MS2 respondió 404
+porque el vuelo 999999 no existe (la BD de MS2 está vacía hoy). MS3 tradujo correctamente
+el 404 de MS2 a su propio contrato de error (docs/contratos/errores.md): 502 DEPENDENCIA_ERROR.
+Una vez que MS2 tenga datos reales cargados, un vuelo_id existente debería dejar crear la
+incidencia sin este error.

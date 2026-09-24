@@ -215,6 +215,115 @@ Verificado contra el estado real de los 9 repos (no solo contra este checklist),
 - **Pendiente real:** DA-04 (revisión cruzada con Fabricio/Alexander) y confirmar contra la consola AWS
   una vez desplegado; falta insertarlo también en el PPT del Hito 2 (EX-07, todavía no existe).
 
+### 🟢 ingesta-ms1 / ingesta-ms2 desplegados y corridos en VM-INGESTA (2026-09-23)
+
+- Empaqueté el código de Guillermo (`ingesta-ms1`) y Mariano (`ingesta-ms2`) desde
+  `aeropuerto-data-science/ingesta/`, lo subí a S3 y lo desplegué en VM-INGESTA (reemplazando mi
+  placeholder). Construí las 2 imágenes reales con `docker compose build` y las corrí de verdad
+  (`docker compose run --rm`), apuntando a la VM-DB real con las credenciales del `terraform.tfvars`.
+- **Pipeline confirmado funcional de punta a punta:** conecta a MySQL/PostgreSQL reales, extrae las
+  tablas, sube a `s3://mla-aeropuerto-lake/raw/ms{1,2}/`. Evidencia: `raw/ms2/*/2026-09-23/*.csv` en S3.
+- **0 filas porque la VM-DB de hoy está vacía** — Guillermo/Mariano ya habían cargado 20k contra sus
+  propios entornos (locales o la cuenta AWS vieja de Benja), pero no contra esta infra nueva. **Falta
+  que ellos recarguen sus seeds contra `DB_HOST=10.0.10.170`** (o me pasan el comando y lo corro yo).
+- `ingesta-ms3` sigue sin existir (bloqueado en Edinson) — es el único de los 3 que falta.
+- Nota menor: el script de Guillermo salta el upload cuando una tabla tiene 0 filas; el de Mariano sube
+  igual un CSV vacío (solo encabezado). No es un bug, solo una diferencia de criterio entre ambos.
+
+### 🟢 Cierre de la cadena de datos: carga masiva + Glue + Athena (2026-09-23)
+
+- **Carga masiva real contra la VM-DB de hoy:** MS1 (`load_csv.py` de Guillermo) → 184 394 filas,
+  **25 000 tickets**. MS2 (generador de Mariano) → **20 500 vuelos** + 21 000 asientos. Ambos
+  verificados con `COUNT(*)` independiente, no solo el log del script
+  (`docs/evidencias/backend/ms{1,2}-count-2026-09-23.txt`).
+- Re-corrí `ingesta-ms1`/`ingesta-ms2` sobre estos datos reales → `s3://mla-aeropuerto-lake/raw/ms{1,2}/`
+  ya tiene el 100% real, no CSVs vacíos.
+- **DS-09 (Glue):** creé `aeropuerto_lake` + 1 crawler por prefijo (`LabRole`). 14 tablas catalogadas
+  (6 de MS1, 8 de MS2); el crawler de MS3 corrió pero no encontró nada (bloqueado en Edinson).
+- **DS-10 (esquemas):** encontré y arreglé un bug real — el crawler infiere `hora_programada`/
+  `hora_real` como `varchar` (formato real `2026-09-30 06:15:00+00:00`, ISO8601 con offset), y las
+  queries de Fabricio que usaban `date_diff()`/`EXTRACT()` directo fallaban. Arreglado envolviendo con
+  `from_iso8601_timestamp(replace(col,' ','T'))` en vez de forzar el tipo de columna en el catálogo.
+- **DS-11 (Athena):** configuré el workgroup (`OutputLocation=s3://mla-aeropuerto-lake/athena-results/`)
+  y corrí las 5 queries reales de Fabricio. **3 de 5 (Q2, Q4, Q5) funcionan con datos reales** — evidencia
+  completa en `docs/evidencias/athena/`. Q1 y Q3 necesitan la tabla `incidencia` (MS3), bloqueadas.
+- **DS-12 (vistas):** las 2 vistas (`vw_recaudacion_tuua`, `vw_retrasos_hora_punta`) creadas y
+  confirmadas con `SHOW VIEWS` — la segunda necesitó el mismo fix de timestamps que Q5.
+- Commits en `aeropuerto-data-science` (fix de las 3 queries) y en `cloud-computing-proyecto`
+  (checklist + evidencia), todo pusheado.
+
+### 🟢 EX-07 — PPT resumen del Hito 2 (2026-09-23)
+
+- Generé `ppt/hito2-resumen.pptx` (18 slides) con `python-pptx`: portada, agenda, y las 9 secciones del
+  plan (intro, arquitectura + diagrama, backend, transformaciones, frontend, data science, despliegue,
+  repos, conclusiones), con el estado real de hoy (no aspiracional) y la evidencia recolectada en esta
+  sesión. El equipo puede seguir editándolo directamente.
+
+### 🟢 ingesta-ms3 construido y las 5 queries de Athena ya funcionan (2026-09-23)
+
+- Ante la falta de tiempo, construí `ingesta-ms3` yo mismo adaptando el aplanado de referencia que
+  **ya había escrito Fabricio** (`athena/local-postgres/aplanar_ms3.py`, explícitamente marcado como
+  "esto lo hará ingesta-ms3 en F2") — no fue inventar lógica de negocio nueva, fue conectar 2 piezas
+  que ya existían: su generador de seed (`seeds/generators/ms3_infra.py`) + su aplanado, adaptado para
+  leer de una MongoDB real en vez de JSONL local.
+- Cargado en MongoDB real: 500 recursos, **25 000 incidencias**, 40 000 asignaciones (`mongoimport`,
+  verificado con `countDocuments()` independiente).
+- `ingesta-ms3` corrido de verdad: 5 archivos en `s3://mla-aeropuerto-lake/raw/ms3/` con datos reales.
+- Encontré y arreglé un bug real en el camino (DS-10): el SerDe simple de Glue no soporta comillas CSV
+  — una coma dentro del texto libre de `descripcion` corrompía las columnas siguientes. Arreglado
+  saneando la coma en el origen, no cambiando el SerDe (para no romper el tipado del resto).
+- **Resultado: las 5 consultas de Athena (Q1-Q5) y las 2 vistas ya funcionan con datos reales de las
+  3 fuentes.** Catálogo Glue con 19 tablas. Evidencia completa en `docs/evidencias/athena/`.
+- Avisarle a Edinson: su trabajo de generador/aplanado era correcto y se usó tal cual — solo faltaba
+  conectarlo a una MongoDB real, que es justo el paso donde estaba trabado por tiempo.
+
+### 🔴 Revisión de riesgos (2026-09-23) — qué puede salir mal antes de la entrega/demo
+
+- **`terraform/ec2.tf` y `variables.tf` NO reflejan lo realmente desplegado.** Tienen 161+56 líneas de
+  cambios sin commitear desde antes de esta sesión (no son míos). Si alguien clona el repo y corre
+  `terraform apply` desde cero, **no reproduce la infra actual** — riesgo real para el punto de la
+  rúbrica de "infra reproducible por Terraform". Pendiente: revisar y commitear esos 2 archivos.
+- **El `.tfstate` de Terraform solo existe en mi máquina** (correctamente en `.gitignore`, pero no hay
+  backend remoto). Si otra persona necesita tocar la infra por Terraform, no tiene el state — quedaría
+  desincronizado o intentaría recrear recursos que ya existen. Considerar backend S3 si el equipo va a
+  seguir iterando la infra.
+- **VM-PROD sigue con IP pública asignada** (aunque bloqueada por `sg-vm-prod`). Si alguien revierte el
+  commit de hoy o reabre el SG por error, vuelve a quedar expuesta al toque. Un grader que mire la
+  consola EC2 (no solo pruebe conectividad) podría notar la IP pública igual, aunque inalcanzable.
+- ✅ **Swagger arreglado en las 5 APIs** — MS1/MS2 ya funcionaban; arreglé el ruteo de nginx para MS4/MS5
+  (no le recortaba el prefijo, mismo patrón que el actuator de MS2); y a **MS3 le agregué Swagger desde
+  cero** (no existía en el código — spec OpenAPI 3.0 escrito a mano con `swagger-ui-express`, a partir
+  de las rutas y schemas Ajv reales). Los 5 verificados 200 vía gateway el 23-Set. Item "Swagger-UI
+  navegable de las 5 APIs" cerrado; falta solo la página agregada (de Alexander).
+- 🟡 **`terraform/ec2.tf` y `variables.tf` ya commiteados** (2026-09-23) — ya no hay drift entre lo
+  desplegado y el repo. Sigue pendiente: backend remoto del `.tfstate` si el equipo va a seguir
+  iterando la infra desde otra máquina.
+- 🟢 **Script de reactivación creado y probado:** `scripts/reactivar-sesion.sh` automatiza el RUNBOOK
+  Parte 2 (arranca las 4 EC2, levanta `docker compose` en VM-DB/VM-PROD, espera el ALB, prueba API
+  Gateway). Corrido hoy en modo `--check`: 4/4 instancias, 2/2 targets healthy, API Gateway 200.
+- **Evidencia de consumo MS1→MS2 y MS4→MS1/2/3 no capturada explícitamente** (solo MS3→MS2 tiene log
+  guardado) — el código y los endpoints existen, falta la captura antes del PDF final.
+- **Reinicio tras corte de sesión sigue sin cronometrarse** — el RUNBOOK lo documenta pero nunca se
+  probó un corte real con la infra de hoy. Riesgo para la exposición de Semana 7 si el Lab se corta
+  a mitad de la demo y nadie sabe cuánto tarda en verdad volver a levantar todo.
+- **La sesión de AWS de Jobeth expira cada ~4h** y hay que pedirle credenciales nuevas cada vez — esto
+  va a repetirse en la exposición de Semana 7; alguien del equipo (idealmente Jobeth) debe tener el
+  Learner Lab abierto y listo antes de esa sesión, no durante.
+- **Datos reales respaldados** (2026-09-23, post carga de MS1/MS2/MS3): `backups/mysql-20260923-0645.sql`
+  (10.9MB), `pg-20260923-0645.sql` (2.9MB), `mongo-20260923-0645.archive` (11.1MB) — si el Lab corta
+  sesión y se pierde el volumen de VM-DB, se puede restaurar desde ahí sin volver a correr los seeds.
+
+### Lo que sigue bloqueado y no es mío para resolver solo
+
+- **Amplify** — pendiente que Jobeth lo despliegue desde la consola web (instrucciones ya enviadas);
+  si también falla ahí, activar contingencia S3+CloudFront (R1).
+- **DA-04** — revisión cruzada del diagrama con Fabricio y Alexander (necesita su input, no solo el mío).
+- **EX-08 (informe final)** — `03-backend.tex` (4 pendientes), `05-frontend.tex` (2), `06-data-science.tex`
+  (1) siguen con secciones sin cerrar de Guillermo/Mariano/Edinson/Fabricio/Alexander — no es correcto
+  que yo las escriba por ellos.
+- **EX-10 (subida a Canvas)** — requiere login al LMS del curso, fuera de mi alcance.
+- **EX-11/EX-12** — ensayo y exposición presencial, requieren al equipo completo.
+
 ### 🟢 Despliegue real de infra (2026-09-22) — cuenta AWS de Jobeth
 
 - **Cambio de cuenta:** el crédito de AWS Academy de Benja se agotó; el equipo despliega desde hoy en

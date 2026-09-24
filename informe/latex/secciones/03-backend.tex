@@ -28,107 +28,259 @@ agrega vía HTTP; MS5 consulta el data lake.}
 \subsection{Implementación y decisiones}
 
 \subsubsection{MS1 --- Pasajeros / Tickets (Guillermo)}
-\pendiente{Documentar los endpoints implementados, migraciones Alembic,
-seed de 20\,000 tickets, la validación \texttt{MS1$\to$MS2} en
-\texttt{POST /tickets} y la evidencia del \texttt{COUNT(*)} en las tablas
-de volumen (\texttt{ticket}, \texttt{equipaje}).}
+MS1 cubre el dominio de pasajeros del aeropuerto Jorge Chávez: categorías
+migratorias, pasajeros, emisión de tickets, check-in y equipaje. Se
+implementa en Python 3.12 con FastAPI 0.115, SQLAlchemy 2 como ORM, Alembic
+para las migraciones versionadas y MySQL 8. La API corre en el puerto
+interno 8001 bajo el prefijo público \texttt{/api/pasajeros} (nginx). La
+URL de MS2 se configura por variable de entorno
+(\texttt{MS2\_BASE\_URL}, cliente \texttt{httpx} con timeout de 3\,s y 2
+reintentos), de modo que el mismo código consume el MS2 real en producción
+o el mock local en desarrollo.
+
+\begin{figure}[htbp]
+  \centering
+  \IfFileExists{imagenes/swagger-ms1.png}{%
+    \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms1.png}%
+  }{%
+    \fbox{\parbox{0.90\linewidth}{\centering\textbf{Swagger-UI de MS1}\par
+    Copiar \texttt{swagger-ms1.png} a \texttt{imagenes/} y recompilar.}}%
+  }
+  \caption{Swagger-UI de MS1 (\texttt{/docs}). Evidencia E-3.1.1.}
+  \label{fig:swagger-ms1}
+\end{figure}
+
+\paragraph{Modelo de datos.}
+El esquema (una migración Alembic, revisión \texttt{6ca35b598ec2}) tiene
+seis tablas sobre MySQL 8 con los enums canónicos de
+\texttt{contratos/enums.md} (sin tildes, para que los \texttt{JOIN} de
+Athena coincidan):
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.20\textwidth}p{0.22\textwidth}p{0.34\textwidth}X}
+\toprule
+Tabla (PK) & Columnas & Relación \\
+\midrule
+\texttt{persona} (\texttt{id\_persona}) & \texttt{nombre},
+\texttt{apellido}, \texttt{fecha\_nacimiento} & superclase de identidad \\
+\texttt{categoria\_migratoria} (\texttt{id}) & \texttt{nombre} ENUM,
+\texttt{tarifa} & \texttt{CHECK(tarifa >= 0)}; 1--N \texttt{pasajero}
+(3 filas: Nacional 12.50, Internacional 38.45, Transito 18.00 PEN) \\
+\texttt{pasajero} (\texttt{id\_persona}) & \texttt{tipo\_documento} ENUM,
+\texttt{numero\_documento}, \texttt{id\_categoria} &
+\texttt{UNIQUE(tipo\_documento, numero\_documento)}; 1:1 IsA con
+\texttt{persona} \\
+\texttt{ticket} (\texttt{id\_ticket}) & \texttt{precio},
+\texttt{fecha\_emision}, \texttt{estado\_boarding} ENUM,
+\texttt{id\_vuelo}, \texttt{id\_persona} & \texttt{id\_vuelo} soft
+$\to$ MS2; rango 1--60\,000; 1--1 \texttt{checkin} \\
+\texttt{checkin} (\texttt{id\_ticket}) & \texttt{fecha\_hora},
+\texttt{counter}, \texttt{con\_equipaje} & entidad débil 1:1 con
+\texttt{ON DELETE CASCADE} \\
+\texttt{equipaje} (\texttt{id} Tag BHS) & \texttt{peso},
+\texttt{id\_persona}, \texttt{id\_vuelo} & \texttt{CHECK(peso > 0)};
+\texttt{id\_vuelo} soft $\to$ MS2 \\
+\bottomrule
+\end{tabularx}
+\caption{Esquema MySQL de MS1 (6 tablas).}
+\label{tab:ms1-db}
+\end{table}
+
+\texttt{ticket.id\_vuelo} y \texttt{equipaje.id\_vuelo} son
+\textbf{referencias suaves} a MS2: no hay FK física y su integridad se
+valida por REST al escribir (Sección~\ref{sec:transformaciones}). El
+diagrama E/R de la base se muestra en la Figura~\ref{fig:er-ms1}.
+
+\begin{figure}[htbp]
+  \centering
+  \IfFileExists{imagenes/ms1-mysql-er.png}{%
+    \includegraphics[width=0.95\linewidth]{imagenes/ms1-mysql-er.png}%
+  }{%
+    \fbox{\parbox{0.90\linewidth}{\centering\textbf{E/R de MS1}\par
+    Copiar \texttt{ms1-mysql-er.png} a \texttt{imagenes/} y recompilar.}}%
+  }
+  \caption{E/R de la base MySQL de MS1 (6 tablas). Evidencia E-3b.1.}
+  \label{fig:er-ms1}
+\end{figure}
+
+\paragraph{Endpoints implementados.}
+Bajo la base pública \texttt{/api/pasajeros}:
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.06\textwidth}p{0.19\textwidth}p{0.50\textwidth}X}
+\toprule
+Método & Ruta & Descripción \\
+\midrule
+GET & \texttt{/health}, \texttt{/health/db} & Estado del servicio y de la conexión MySQL \\
+GET & \texttt{/categorias-migratorias} & Las 3 categorías con tarifa TUUA \\
+POST & \texttt{/pasajeros} & Crea \texttt{persona}+\texttt{pasajero}; 409 si documento duplicado \\
+GET & \texttt{/pasajeros} & Lista con filtros \texttt{tipo\_documento} y \texttt{numero\_documento} \\
+GET & \texttt{/pasajeros/\{id\}} & Pasajero por id; 404 si no existe \\
+GET & \texttt{/pasajeros/\{id\}/tickets} & Tickets de un pasajero \\
+POST & \texttt{/tickets} & Emite ticket; valida el vuelo contra MS2 \\
+GET & \texttt{/tickets} & Lista con filtro \texttt{vuelo\_id} \\
+GET & \texttt{/tickets/\{id\}} & Ticket por id; 404 si no existe \\
+POST & \texttt{/tickets/\{id\}/checkin} & Check-in 1:1; segundo intento $\to$ 409 \\
+POST & \texttt{/equipajes} & Registra equipaje (Tag BHS único); valida vuelo contra MS2 \\
+GET & \texttt{/equipajes} & Lista con filtros \texttt{pasajero\_id} y \texttt{vuelo\_id} \\
+\bottomrule
+\end{tabularx}
+\caption{Endpoints de MS1.}
+\label{tab:ms1-endpoints}
+\end{table}
+
+Los errores siguen el contrato común: cuerpo
+\texttt{\{"error": \{"code": ..., "message": ...\}\}} con los códigos 400
+(validación), 404 (no encontrado), 409 (duplicado), 422 (precondición no
+cumplida, e.\,-g.\ vuelo inexistente o cancelado) y 502 (MS2 no
+disponible).
+
+\paragraph{Consumo entre servicios (MS1$\to$MS2).}
+Al emitir un ticket o registrar un equipaje, MS1 valida el vuelo con
+\texttt{GET /api/vuelos/\{id\}/exists} de MS2. En la verificación real
+contra producción (23-Set-2026), \texttt{POST /api/pasajeros/tickets} con
+\texttt{\{"precio": 45.5, "fecha\_emision": "2026-09-23", "id\_vuelo": 1,
+"id\_persona": 100003\}} respondió \texttt{201} y el log del contenedor
+registró la llamada saliente \texttt{Saliente MS1$\to$MS2: GET
+http://ms2:8002/api/vuelos/1/exists $\to$ 200}. El log completo está en
+\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}.
+
+\paragraph{Carga masiva y volumen.}
+La base se pobló con los CSVs compartidos de
+\texttt{aeropuerto-data-science/seeds/} (generador de Dev D, \texttt{SEED}
+fijo) mediante \texttt{app/scripts/load\_csv.py}, ejecutado contra la VM
+de producción con inserciones por lotes vía SQLAlchemy. El
+\texttt{COUNT(*)} real (23-Set-2026) fue: \texttt{persona} 60\,000,
+\texttt{pasajero} 60\,000, \texttt{ticket} 25\,000, \texttt{equipaje}
+22\,814 y \texttt{checkin} 16\,577, superando el mínimo de 20\,000 en
+\texttt{ticket} y \texttt{equipaje}
+(\texttt{docs/evidencias/backend/ms1-count-2026-09-23.txt}).
+
+\paragraph{Pruebas.}
+La API se acompaña de 32 pruebas \texttt{pytest} sobre una base SQLite
+in-memory (sin MySQL) que cubren los happy paths de pasajero, ticket,
+check-in y equipaje, y los errores del contrato (404/409/422/502),
+incluida la validación MS1$\to$MS2 de vuelo inexistente y cancelado. Smoke
+end-to-end completo y log MS1$\to$MS2 en \texttt{smoke\_test.txt} y
+\texttt{log\_ms1\_ms2.txt} del repositorio.
 
 \subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
+MS2 es responsable del dominio operacional del aeropuerto: vuelos,
+aerolíneas, aeronaves, asientos y la tripulación asignada a cada vuelo.
+Se implementa en Java 21 con Spring Boot 4.0.8, persistencia con
+Spring Data JPA sobre PostgreSQL 16, migraciones versionadas con
+Flyway y documentación OpenAPI con springdoc.
 
-\pendiente{Documentar el modelo Flyway, la máquina de estados de
-\texttt{vuelo.estado}, el endpoint \texttt{GET /vuelos/\{id\}/exists}
-usado por MS1 y MS3, la tripulación N-M y el seed de 20\,000 vuelos.
-Adjuntar la evidencia del \texttt{COUNT(*)}.}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms2.png}
+  \caption{Swagger-UI de MS2 (\texttt{/docs}) por la URL pública. Evidencia E-3.2.1.}
+  \label{fig:swagger-ms2}
+\end{figure}
+
+El modelo de datos tiene ocho tablas: \texttt{aerolinea}, \texttt{aeronave},
+\texttt{asiento}, \texttt{vuelo}, \texttt{empleado}, \texttt{tripulacion},
+\texttt{operativo\_tierra} y \texttt{opera\_tripulacion}. Las relaciones
+principales son \texttt{aerolinea} 1--N \texttt{vuelo}, \texttt{aeronave}
+1--N \texttt{vuelo}, \texttt{aeronave} 1--N \texttt{asiento} (entidad
+débil) y \texttt{tripulacion} N--M \texttt{vuelo} vía la tabla puente
+\texttt{opera\_tripulacion}. Las claves naturales del modelo monolítico
+se conservan: \texttt{aerolinea.ruc} y \texttt{aeronave.placa}, en vez
+de identificadores autogenerados.
+
+\texttt{empleado} reemplaza a la superclase \texttt{Persona} del modelo
+original para el personal del aeropuerto (identidad propia del
+servicio, ver Sección~\ref{sec:transformaciones}), con dos subtipos
+modelados como patrón IsA de JPA (\texttt{@MapsId}): \texttt{tripulacion}
+(\texttt{num\_licencia}) y \texttt{operativo\_tierra}
+(\texttt{area\_operativa}), cada una con su propia primary key
+compartida con \texttt{empleado.id}. La tabla puente
+\texttt{opera\_tripulacion} usa una clave primaria compuesta
+(\texttt{vuelo\_id}, \texttt{tripulacion\_empleado\_id}), modelada en
+JPA con \texttt{@IdClass} sobre una clase auxiliar sin correspondencia
+a ninguna tabla propia.
+
+Los endpoints, bajo el prefijo \texttt{/api/vuelos}, cubren CRUD de
+\texttt{aerolineas} (PK \texttt{ruc}) y \texttt{aeronaves} (PK
+\texttt{placa}, con \texttt{GET /aeronaves/\{placa\}/asientos}), CRUD de
+\texttt{vuelos} con filtros combinables \texttt{?num=\&estado=\&tipo=\&fecha=}
+implementados con \texttt{JpaSpecificationExecutor} (construye la
+consulta SQL dinámicamente según qué parámetros llegan, sin un método
+por cada combinación), consulta de \texttt{empleados} por id o por
+\texttt{tipo}, y asignación N--M de tripulación a un vuelo
+(\texttt{POST}/\texttt{GET /vuelos/\{id\}/tripulacion}).
+
+La Figura~\ref{fig:swagger-ms2} muestra el Swagger-UI navegable con los
+15 endpoints implementados.
+
+\texttt{PATCH /vuelos/\{id\}/estado} implementa una máquina de estados
+explícita (\texttt{EstadoVueloMaquina}) sobre el enum
+\texttt{estado\_vuelo}: \texttt{Programado} puede pasar a
+\texttt{Embarcando}, \texttt{Retrasado} o \texttt{Cancelado};
+\texttt{Embarcando} a \texttt{Despegado}, \texttt{Retrasado} o
+\texttt{Cancelado}; \texttt{Retrasado} a \texttt{Embarcando},
+\texttt{Despegado} o \texttt{Cancelado}; \texttt{Despegado} únicamente a
+\texttt{Aterrizado}; \texttt{Aterrizado} y \texttt{Cancelado} son
+estados finales sin transiciones salientes. Una transición fuera de esa
+tabla responde \texttt{422 TRANSICION\_ESTADO\_INVALIDA}, siguiendo el
+contrato de errores común. Al transicionar a \texttt{Despegado},
+\texttt{hora\_real} se registra automáticamente con la hora del
+servidor.
+
+\texttt{GET /vuelos/\{id\}/exists} es el endpoint liviano de validación
+consumido por MS1 (al emitir un ticket) y MS3 (al registrar una
+incidencia o asignación que referencia un vuelo): responde
+\texttt{200 \{exists, estado\}} si el vuelo existe y \texttt{404} en
+caso contrario, evitando que los servicios consumidores traigan el
+objeto completo solo para verificar existencia. Es el mismo mecanismo
+de referencia suave descrito en la Sección~\ref{sec:transformaciones}.
+
+El consumo real de este endpoint está verificado con logs de
+producción: MS1 lo invoca al emitir un ticket
+(\texttt{GET /api/vuelos/1/exists} $\to$ \texttt{200}, previo a un
+\texttt{POST /tickets} exitoso) y MS3 lo invoca al validar un vuelo
+inexistente, traduciendo la respuesta \texttt{404} de MS2 a
+\texttt{502 DEPENDENCIA\_ERROR} en su propio contrato (ver
+\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}).
+
+Como el rango de \texttt{vuelo.id} es fijo y compartido entre servicios
+(1--25\,000, ver \texttt{contratos/enums.md}), el siguiente id se
+calcula con \texttt{SELECT COALESCE(MAX(id), 0) + 1} vía \texttt{@Query}
+en el repositorio, en vez de traer todas las filas a memoria. Es
+suficiente para el alcance del proyecto (pruebas manuales, sin
+escrituras concurrentes reales); se documenta como limitación conocida,
+no como pendiente.
+
+El manejo de errores sigue el contrato común mediante un
+\texttt{@RestControllerAdvice} único (\texttt{GlobalExceptionHandler})
+que traduce las excepciones de dominio a los códigos acordados:
+\texttt{VALIDACION} (400), \texttt{NO\_ENCONTRADO} (404),
+\texttt{CONFLICTO\_ESTADO} (409) y \texttt{TRANSICION\_ESTADO\_INVALIDA}
+(422).
+
+\textbf{Carga masiva.} El generador de datos ficticios
+(\texttt{seed/generar\_seed.py}) usa \texttt{Faker} con \texttt{SEED}
+fijo e inserciones por lote (\texttt{execute\_values} de psycopg2) para
+poblar 5 aerolíneas, 100 aeronaves, 21\,000 asientos, 300 empleados de
+tripulación, 20\,500 vuelos y sus asignaciones N--M de tripulación. Se
+empaqueta como contenedor Docker independiente y se ejecuta una sola
+vez contra la base de datos objetivo.
 
 \subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
-MS3 gestiona la infraestructura aeroportuaria: el inventario de
-\textbf{recursos} (mangas y radares), las \textbf{incidencias}
-operativas y las \textbf{asignaciones} vuelo--recurso. Se implementa en
-Node.js con Express 4 y Mongoose sobre MongoDB 7 (base
-\texttt{infra\_db}); escucha en el puerto 3003 bajo el prefijo
-\texttt{/api/infra}.
-
-\paragraph{Modelo de datos}
-Tres colecciones validadas con \textbf{AJV} (JSON Schema) antes de
-insertar; los esquemas viven en \texttt{src/schemas/}:
-\begin{itemize}
-  \item \texttt{recursos}: \texttt{id} entero, \texttt{nombre\_tecnico\_locacion}
-    y \texttt{tipo} (\texttt{manga} o \texttt{radar}), más un
-    subdocumento según el tipo: \texttt{manga} con
-    \texttt{estado\_acople} (\texttt{Libre}, \texttt{Ocupado},
-    \texttt{Mantenimiento}, \texttt{Inoperativa}), \texttt{longitud} y
-    \texttt{clase\_max} (letra \texttt{A}--\texttt{F}); o \texttt{radar}
-    con \texttt{rango\_alcance}, \texttt{frecuencia} (\texttt{Banda
-    L/S/C/X}) y \texttt{estado\_radar}.
-  \item \texttt{incidencias}: \texttt{id}, \texttt{gravedad}
-    (\texttt{Leve}, \texttt{Moderada}, \texttt{Alta}, \texttt{Critica}),
-    \texttt{descripcion}, \texttt{tipo\_incidencia}
-    (\texttt{Falla\_Radar}, \texttt{Inundacion},
-    \texttt{Falta\_Combustible}, \texttt{Saturacion\_Vial},
-    \texttt{Manga\_Inoperativa}, \texttt{Otro}), \texttt{fecha\_reporte}
-    y \texttt{fecha\_cierre} opcional (nulo mientras está abierta), más
-    los arreglos \texttt{afecta\_recursos[]} (\texttt{recurso\_id}) y
-    \texttt{retrasa\_vuelos[]} (\texttt{vuelo\_id}).
-  \item \texttt{asignaciones}: \texttt{recurso\_id} y \texttt{vuelo\_id}
-    obligatorios, \texttt{fecha\_inicio}/\texttt{fecha\_fin} opcionales
-    y \texttt{estado\_asignacion} (\texttt{Programada}, \texttt{En\_Curso},
-    \texttt{Finalizada}, \texttt{Cancelada}).
-\end{itemize}
-
-\paragraph{Endpoints}
-El backend expone el CRUD bajo \texttt{/api/infra}:
-\begin{itemize}
-  \item \textbf{Recursos}: \texttt{GET /recursos} con filtros
-    \texttt{?tipo=} y \texttt{?estado=}, \texttt{GET /recursos/\{id\}},
-    \texttt{POST /recursos} y \texttt{PATCH /recursos/\{id\}/estado}
-    (cambia \texttt{estado\_acople} en mangas o \texttt{estado\_radar}
-    en radares).
-  \item \textbf{Incidencias}: \texttt{GET /incidencias} con filtros
-    \texttt{?tipo=}, \texttt{?desde=} y \texttt{?hasta=},
-    \texttt{GET /incidencias/\{id\}}, \texttt{POST /incidencias} y
-    \texttt{PATCH /incidencias/\{id\}/cierre}.
-  \item \textbf{Asignaciones}: \texttt{GET /asignaciones} con
-    \texttt{?vuelo\_id=} y \texttt{?recurso\_id=} y
-    \texttt{POST /asignaciones}.
-  \item Además, \texttt{GET /health} (y \texttt{/api/infra/health}) para
-    los \emph{health checks} del \texttt{docker compose} de producción.
-\end{itemize}
-Las consultas por identificador usan \texttt{findOne(\{ id \})} sobre un
-índice único \texttt{id\_1}: el esquema de negocio expone el
-\texttt{id} de dominio en lugar del \texttt{\_id} generado por Mongo.
-
-\paragraph{Consumo de MS2 y reglas de negocio}
-Al crear una incidencia, cada \texttt{vuelo\_id} de
-\texttt{retrasa\_vuelos[]} se valida contra
-\texttt{GET /api/vuelos/\{id\}/exists} de MS2 (MS3$\to$MS2); si el vuelo
-no existe o está \texttt{Cancelado}, la respuesta es
-\texttt{422 VUELO\_NO\_EXISTE}. \texttt{POST /asignaciones} repite esa
-validación y añade dos reglas: el recurso debe estar \texttt{Libre}
-(solo aplica a mangas; si no, \texttt{409 RECURSO\_OCUPADO}), y
-\texttt{clase\_max} de la manga debe ser mayor o igual que la clase de
-la aeronave del vuelo, que se obtiene de MS2
-(\texttt{422 ACOPLE\_CLASE\_INVALIDO}). El cliente \texttt{ms2Client}
-usa \texttt{fetch} nativo con timeout de 3~s; si MS2 no responde, MS3
-devuelve \texttt{502 DEPENDENCIA\_ERROR} o
-\texttt{503 DEPENDENCIA\_TIMEOUT}. El cierre de incidencias
-(\texttt{PATCH /incidencias/\{id\}/cierre}) fija
-\texttt{fecha\_cierre} y rechaza un segundo cierre con
-\texttt{409 INCIDENCIA\_YA\_CERRADA}. Los errores siguen el contrato
-común (\texttt{docs/contratos/errores.md}) con el formato
-\texttt{\{ error: \{ code, message, status, details, service, timestamp \} \}}.
-
-\paragraph{Carga masiva y evidencia}
-El generador compartido del data squad (orden MS2$\to$MS3, misma
-semilla) emitió \textbf{500 recursos} (350 mangas y 150 radares),
-\textbf{25\,000 incidencias} y \textbf{40\,000 asignaciones}, con
-\texttt{vuelo\_id} en el rango 1--25\,000 de MS2 para que los
-\emph{joins} del data lake no queden vacíos. Los datos se cargaron una
-única vez con \texttt{mongoimport} en \texttt{infra\_db}; la evidencia es
-\texttt{db.incidencias.countDocuments()} = 25\,000
-($\geq$ 20\,000 exigidos) en el \texttt{mongosh} de la base. Esta misma
-colección alimenta la \texttt{ingesta-ms3}, que aplana
-\texttt{incidencias} en tres archivos planos hacia \texttt{raw/ms3/}
-(véase la Sección \ref{sec:data-science}).
+\pendiente{Documentar los esquemas JSON de \texttt{recursos},
+\texttt{incidencias} y \texttt{asignaciones}, los endpoints CRUD, la
+validación \texttt{MS3$\to$MS2} al crear una incidencia con
+\texttt{retrasa\_vuelos[]}, y el seed de 20\,000 incidencias con la
+evidencia del \texttt{db.incidencias.countDocuments()}. Ya recolectada:
+25\,000 incidencias reales (verificadas con \texttt{countDocuments()}) y log
+real de \texttt{MS3$\to$MS2}, 23-Set-2026 --
+\texttt{docs/evidencias/backend/ms3-count-2026-09-23.txt} y
+\texttt{docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt}. Swagger-UI
+agregado hoy en \texttt{/api/infra/docs} (MS3-09) -- pendiente de que la
+imagen se publique en Docker Hub (bloqueado por permisos del token, ver
+\texttt{docs/plan/personas/benja.md}).}
 
 \subsubsection{MS4 --- Manifiesto de vuelo (Fabricio)}
 MS4 es un agregador HTTP sin base de datos propia. Recibe una petición
@@ -220,6 +372,23 @@ para las llamadas a MS2.
     especificación en \texttt{/openapi.json} y Swagger-UI en
     \texttt{/docs}. Los cinco \texttt{openapi.yaml} borrador viven en la
     raíz de cada repositorio.
+  \item MS1 supera el mínimo de 20\,000 registros en sus dos tablas de
+    volumen: \texttt{ticket} (25\,000) y \texttt{equipaje} (22\,814),
+    verificado con \texttt{COUNT(*)} contra la VM-DB de producción el
+    23-Set-2026 (\texttt{docs/evidencias/backend/ms1-count-2026-09-23.txt}),
+    y consume a MS2 de forma verificada
+    (\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}).
+  \item MS2 supera el mínimo de 20\,000 registros en sus dos tablas de
+    volumen: \texttt{vuelo} (20\,500) y \texttt{asiento} (21\,000),
+    verificado con \texttt{COUNT(*)} contra la VM-DB de producción el
+    23-Set-2026 (\texttt{docs/evidencias/backend/ms2-count-2026-09-23.txt}).
+  \item MS2 se acompaña de pruebas con \texttt{@SpringBootTest} y
+    \texttt{MockMvc} que cubren el happy path de creación de aerolínea,
+    validación de datos inválidos (\texttt{400 VALIDACION}), búsqueda
+    de recursos inexistentes (\texttt{404 NO\_ENCONTRADO}),
+    \texttt{GET /vuelos/\{id\}/exists} con y sin vuelo existente, y la
+    lógica de la máquina de estados en aislamiento (unit test puro,
+    sin base de datos, sobre \texttt{EstadoVueloMaquina}).
   \item MS4 se probó \emph{end-to-end} contra los MS1/MS2/MS3 reales
     durante el Hito 1: para el vuelo \texttt{id=1} devolvió el vuelo
     \texttt{CM0001 (Copa Airlines, LIM-TRU)}, la tripulación con
@@ -244,6 +413,5 @@ para las llamadas a MS2.
     código.
 \end{itemize}
 
-\pendiente{Adjuntar los \texttt{COUNT(*)} de MS1, MS2 y MS3 tras la
-carga masiva. Adjuntar el JSON completo del manifiesto y el JSON de una
+\pendiente{Adjuntar el JSON completo del manifiesto y el JSON de una
 consulta analítica ejecutada contra la infraestructura desplegada.}
