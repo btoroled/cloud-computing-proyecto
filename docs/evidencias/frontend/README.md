@@ -1,6 +1,6 @@
 # Evidencias de frontend para el informe
 
-Estado: ocho capturas del despliegue y la aplicación incorporadas el 23 de septiembre de 2026; faltan pruebas complementarias de algunos flujos.
+Estado: nueve capturas del despliegue y la aplicación incorporadas el 23 de septiembre de 2026; faltan pruebas complementarias de algunos flujos.
 Responsable: Alexander. Sección del informe: `informe/latex/secciones/05-frontend.tex`.
 
 ## Cómo incorporarlas
@@ -29,19 +29,20 @@ No mostrar contraseñas, tokens ni datos personales reales. Si se exporta un HAR
 ## Registro de la prueba final
 
 - Fecha y hora: 23 de septiembre de 2026, aproximadamente 21:42–21:49 (hora mostrada en las capturas).
-- Commit/frontend desplegado: pendiente.
+- Commit/frontend desplegado para la corrección de MS4: `f177e0b` (merge del fix de rutas).
 - URL frontend: https://main.d6qmhb5ipm8l2.amplifyapp.com/.
 - URL API Gateway: https://0tmopxsjij.execute-api.us-east-1.amazonaws.com/.
 - Configuración sin mocks: pendiente.
 - E-5.1a: `frontend-vuelos.png` muestra lista de vuelos y detalle de AV2790; no acredita PATCH.
+- E-5.1c: `frontend-manifiesto.png` muestra el manifiesto del vuelo 9, con dos pasajeros y uno con check-in, sin aviso de manifiesto parcial. Aeronave, equipaje y recursos no figuran informados; la captura no muestra Network.
 - E-5.1d: `frontend-ticket-checkin.png` muestra ticket emitido y check-in completado con datos ficticios; no muestra las solicitudes de red de emisión/check-in.
 - E-5.1e: `frontend-infraestructura.png` muestra inventario e incidencias; no acredita PATCH ni POST.
 - E-5.1f: `frontend-dashboard.png` muestra cinco indicadores; `frontend-network.png` muestra cinco consultas de analítica con estado HTTP 200.
 - E-5.1g: `frontend-swagger.png` muestra el contrato de MS1 cargado; no acredita los otros cuatro contratos.
 - E-5.1h: `frontend-responsive.png` muestra Infraestructura en modo dispositivo de 682 px de ancho; no prueba todas las páginas móviles.
 - E-5.3: `frontend-amplify.png` muestra implementación exitosa y dominio HTTPS; no acredita por sí sola la operación de todos los servicios.
-- Siete imágenes son copias de los originales conservados en `docs/evidencias/despliegue/`; la captura de ticket/check-in procede de la imagen adjunta por el responsable. Las ocho están también en `informe/latex/imagenes/`.
-- Incidencias encontradas y resolución: pendientes.
+- Siete imágenes son copias de los originales conservados en `docs/evidencias/despliegue/`; las capturas de ticket/check-in y manifiesto proceden de imágenes adjuntas por el responsable. Las nueve están también en `informe/latex/imagenes/`.
+- Incidencias encontradas y resolución: la ruta duplicada `/api/manifiesto/manifiesto/{id}` se corrigió en el frontend; la consulta interna de MS4 a MS1 se encaminó por nginx para eliminar el 404 de tickets. El manifiesto del vuelo 9 cargó sin aviso de parcialidad.
 - Criterio de dos métodos REST para MS4/MS5 aclarado con: pendiente.
 
 ## Validación local disponible
