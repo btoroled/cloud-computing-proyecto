@@ -439,12 +439,12 @@ reproducir la carga inicial de MS2 de manera determinista.
 
 \paragraph{Pruebas.}
 
-Las pruebas de MS2 utilizan el perfil de pruebas con PostgreSQL/H2
-según el escenario y cubren las operaciones principales del dominio:
-CRUD de aerolíneas, aeronaves y vuelos, consultas de empleados,
-asignación de tripulación, filtros de vuelos, transiciones de estado,
-validación de vuelos mediante \texttt{/exists} y respuestas del
-contrato común de errores.
+Las pruebas de MS2 utilizan \texttt{@SpringBootTest} con \texttt{MockMvc}
+contra una instancia real de PostgreSQL (perfil \texttt{test}) y cubren
+las operaciones principales del dominio: CRUD de aerolíneas, aeronaves y
+vuelos, consultas de empleados, asignación de tripulación, filtros de
+vuelos, transiciones de estado, validación de vuelos mediante
+\texttt{/exists} y respuestas del contrato común de errores.
 
 
 
