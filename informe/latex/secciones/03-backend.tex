@@ -34,17 +34,101 @@ seed de 20\,000 tickets, la validación \texttt{MS1$\to$MS2} en
 de volumen (\texttt{ticket}, \texttt{equipaje}).}
 
 \subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
+
 \pendiente{Documentar el modelo Flyway, la máquina de estados de
 \texttt{vuelo.estado}, el endpoint \texttt{GET /vuelos/\{id\}/exists}
 usado por MS1 y MS3, la tripulación N-M y el seed de 20\,000 vuelos.
 Adjuntar la evidencia del \texttt{COUNT(*)}.}
 
 \subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
-\pendiente{Documentar los esquemas JSON de \texttt{recursos},
-\texttt{incidencias} y \texttt{asignaciones}, los endpoints CRUD, la
-validación \texttt{MS3$\to$MS2} al crear una incidencia con
-\texttt{retrasa\_vuelos[]}, y el seed de 20\,000 incidencias con la
-evidencia del \texttt{db.incidencias.countDocuments()}.}
+MS3 gestiona la infraestructura aeroportuaria: el inventario de
+\textbf{recursos} (mangas y radares), las \textbf{incidencias}
+operativas y las \textbf{asignaciones} vuelo--recurso. Se implementa en
+Node.js con Express 4 y Mongoose sobre MongoDB 7 (base
+\texttt{infra\_db}); escucha en el puerto 3003 bajo el prefijo
+\texttt{/api/infra}.
+
+\paragraph{Modelo de datos}
+Tres colecciones validadas con \textbf{AJV} (JSON Schema) antes de
+insertar; los esquemas viven en \texttt{src/schemas/}:
+\begin{itemize}
+  \item \texttt{recursos}: \texttt{id} entero, \texttt{nombre\_tecnico\_locacion}
+    y \texttt{tipo} (\texttt{manga} o \texttt{radar}), más un
+    subdocumento según el tipo: \texttt{manga} con
+    \texttt{estado\_acople} (\texttt{Libre}, \texttt{Ocupado},
+    \texttt{Mantenimiento}, \texttt{Inoperativa}), \texttt{longitud} y
+    \texttt{clase\_max} (letra \texttt{A}--\texttt{F}); o \texttt{radar}
+    con \texttt{rango\_alcance}, \texttt{frecuencia} (\texttt{Banda
+    L/S/C/X}) y \texttt{estado\_radar}.
+  \item \texttt{incidencias}: \texttt{id}, \texttt{gravedad}
+    (\texttt{Leve}, \texttt{Moderada}, \texttt{Alta}, \texttt{Critica}),
+    \texttt{descripcion}, \texttt{tipo\_incidencia}
+    (\texttt{Falla\_Radar}, \texttt{Inundacion},
+    \texttt{Falta\_Combustible}, \texttt{Saturacion\_Vial},
+    \texttt{Manga\_Inoperativa}, \texttt{Otro}), \texttt{fecha\_reporte}
+    y \texttt{fecha\_cierre} opcional (nulo mientras está abierta), más
+    los arreglos \texttt{afecta\_recursos[]} (\texttt{recurso\_id}) y
+    \texttt{retrasa\_vuelos[]} (\texttt{vuelo\_id}).
+  \item \texttt{asignaciones}: \texttt{recurso\_id} y \texttt{vuelo\_id}
+    obligatorios, \texttt{fecha\_inicio}/\texttt{fecha\_fin} opcionales
+    y \texttt{estado\_asignacion} (\texttt{Programada}, \texttt{En\_Curso},
+    \texttt{Finalizada}, \texttt{Cancelada}).
+\end{itemize}
+
+\paragraph{Endpoints}
+El backend expone el CRUD bajo \texttt{/api/infra}:
+\begin{itemize}
+  \item \textbf{Recursos}: \texttt{GET /recursos} con filtros
+    \texttt{?tipo=} y \texttt{?estado=}, \texttt{GET /recursos/\{id\}},
+    \texttt{POST /recursos} y \texttt{PATCH /recursos/\{id\}/estado}
+    (cambia \texttt{estado\_acople} en mangas o \texttt{estado\_radar}
+    en radares).
+  \item \textbf{Incidencias}: \texttt{GET /incidencias} con filtros
+    \texttt{?tipo=}, \texttt{?desde=} y \texttt{?hasta=},
+    \texttt{GET /incidencias/\{id\}}, \texttt{POST /incidencias} y
+    \texttt{PATCH /incidencias/\{id\}/cierre}.
+  \item \textbf{Asignaciones}: \texttt{GET /asignaciones} con
+    \texttt{?vuelo\_id=} y \texttt{?recurso\_id=} y
+    \texttt{POST /asignaciones}.
+  \item Además, \texttt{GET /health} (y \texttt{/api/infra/health}) para
+    los \emph{health checks} del \texttt{docker compose} de producción.
+\end{itemize}
+Las consultas por identificador usan \texttt{findOne(\{ id \})} sobre un
+índice único \texttt{id\_1}: el esquema de negocio expone el
+\texttt{id} de dominio en lugar del \texttt{\_id} generado por Mongo.
+
+\paragraph{Consumo de MS2 y reglas de negocio}
+Al crear una incidencia, cada \texttt{vuelo\_id} de
+\texttt{retrasa\_vuelos[]} se valida contra
+\texttt{GET /api/vuelos/\{id\}/exists} de MS2 (MS3$\to$MS2); si el vuelo
+no existe o está \texttt{Cancelado}, la respuesta es
+\texttt{422 VUELO\_NO\_EXISTE}. \texttt{POST /asignaciones} repite esa
+validación y añade dos reglas: el recurso debe estar \texttt{Libre}
+(solo aplica a mangas; si no, \texttt{409 RECURSO\_OCUPADO}), y
+\texttt{clase\_max} de la manga debe ser mayor o igual que la clase de
+la aeronave del vuelo, que se obtiene de MS2
+(\texttt{422 ACOPLE\_CLASE\_INVALIDO}). El cliente \texttt{ms2Client}
+usa \texttt{fetch} nativo con timeout de 3~s; si MS2 no responde, MS3
+devuelve \texttt{502 DEPENDENCIA\_ERROR} o
+\texttt{503 DEPENDENCIA\_TIMEOUT}. El cierre de incidencias
+(\texttt{PATCH /incidencias/\{id\}/cierre}) fija
+\texttt{fecha\_cierre} y rechaza un segundo cierre con
+\texttt{409 INCIDENCIA\_YA\_CERRADA}. Los errores siguen el contrato
+común (\texttt{docs/contratos/errores.md}) con el formato
+\texttt{\{ error: \{ code, message, status, details, service, timestamp \} \}}.
+
+\paragraph{Carga masiva y evidencia}
+El generador compartido del data squad (orden MS2$\to$MS3, misma
+semilla) emitió \textbf{500 recursos} (350 mangas y 150 radares),
+\textbf{25\,000 incidencias} y \textbf{40\,000 asignaciones}, con
+\texttt{vuelo\_id} en el rango 1--25\,000 de MS2 para que los
+\emph{joins} del data lake no queden vacíos. Los datos se cargaron una
+única vez con \texttt{mongoimport} en \texttt{infra\_db}; la evidencia es
+\texttt{db.incidencias.countDocuments()} = 25\,000
+($\geq$ 20\,000 exigidos) en el \texttt{mongosh} de la base. Esta misma
+colección alimenta la \texttt{ingesta-ms3}, que aplana
+\texttt{incidencias} en tres archivos planos hacia \texttt{raw/ms3/}
+(véase la Sección \ref{sec:data-science}).
 
 \subsubsection{MS4 --- Manifiesto de vuelo (Fabricio)}
 MS4 es un agregador HTTP sin base de datos propia. Recibe una petición
