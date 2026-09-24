@@ -133,9 +133,12 @@ MS5 & GET & \path{/api/analitica/vuelos-hora-punta-retrasados} & E-5.1f \\
 \end{longtable}
 }
 MS1 usa GET y POST; MS2, GET y PATCH; MS3, GET, POST y PATCH.
-MS4 y MS5 solo usan GET en varias rutas.
-\pendiente{Aclarar el criterio de dos métodos REST por servicio:
-varias rutas GET no equivalen a varios verbos HTTP.}
+MS4 y MS5 solo exponen GET en las rutas que utiliza el frontend. Por tanto,
+si el criterio de evaluación exige dos \emph{verbos HTTP distintos} por cada
+microservicio, el frontend no acredita ese criterio para MS4 ni MS5:
+varias rutas GET no equivalen a métodos distintos. La decisión de añadir
+otro verbo pertenece a los contratos de esos servicios y no se simula en
+la interfaz.
 
 \subsection{Validación y alcance}
 En la revisión del 22 de septiembre de 2026, sobre el commit \texttt{34fbd30}, se ejecutaron nuevamente
@@ -148,35 +151,70 @@ Estas comprobaciones no realizan una prueba de integración con AWS.
 El 23 de septiembre de 2026, tras corregir las rutas de MS4, se ejecutaron
 ocho pruebas locales, \texttt{npm run lint} y \texttt{npm run build} sin errores.
 En el despliegue se observaron cinco consultas de MS5 con HTTP 200 en Network,
-un ticket con check-in completado y un manifiesto del vuelo 9 sin aviso de
-parcialidad. La captura del manifiesto muestra dos pasajeros, pero no informa
+un cambio del vuelo LA2113 a Embarcando mediante PATCH con HTTP 200,
+la emisión de un ticket y el check-in con respuestas HTTP 201 en Network,
+y el registro de una incidencia de MS3 mediante POST con HTTP 201. También
+se verificó un cambio de estado del recurso MGA-04 mediante PATCH con HTTP 200
+y un manifiesto del vuelo 9 sin aviso de parcialidad. La captura de ese
+manifiesto muestra dos pasajeros, pero no informa
 aeronave, equipaje ni recursos; esos campos no se presentan como validados.
+Una segunda captura del vuelo 10 muestra las solicitudes de detalle y resumen
+de MS4 con HTTP 200 en Network y tres pasajeros en el manifiesto. Los campos
+de aeronave, equipaje y recursos tampoco figuran informados en ese caso.
 La procedencia y ejecución de Athena requieren evidencia adicional del equipo
 de datos.
+
+La integración con MS4 presentó dos fallos verificables. Primero, el frontend
+solicitaba \path{/api/manifiesto/manifiesto/{id}} y recibió HTTP 404; se alineó
+con el contrato OpenAPI \path{/api/manifiesto/{id}}. Después MS4 devolvía un
+manifiesto parcial porque consultaba
+\path{http://ms1:8001/api/pasajeros/tickets}, ruta inexistente dentro de MS1.
+La configuración de producción pasó esa llamada por nginx, que traduce el
+prefijo público al interno de MS1. Tras actualizar ambas VM-PROD, el
+manifiesto del vuelo 9 se mostró sin la advertencia de dependencia.
+
+En MS3 se detectaron dos incompatibilidades del frontend: el formulario
+iniciaba con \texttt{Falla\_Operativa}, valor ausente del enum de tipos, y
+el PATCH de recursos enviaba el \texttt{\_id} de MongoDB en lugar del ID
+numérico que consulta MS3. Se corrigieron ambos puntos en el frontend;
+las ocho pruebas locales, el análisis estático y la compilación pasaron.
+Después del despliegue, las capturas muestran el POST de incidencia con
+HTTP 201 y el PATCH a \path{/api/infra/recursos/4/estado} con HTTP 200.
 
 El registro \path{docs/VALIDACION_LOCAL.md} del frontend, del 21 de septiembre
 de 2026, documenta compilación y análisis estático correctos, recorridos con
 mocks de las cuatro vistas y revisión local del catálogo y diseño reducido.
 No constituye evidencia de funcionamiento en AWS.
 Las pruebas de contratos emplean respuestas de ejemplo de MS4 y MS5.
-La comprobación final exige repetir recorridos sin mocks y registrar las
-respuestas HTTP. La ejecución de Athena y las llamadas entre backends
-deben acreditarse con sus respectivos responsables.
+Las capturas públicas acreditan las operaciones indicadas en sus pies,
+pero no sustituyen una prueba exhaustiva de la matriz REST.
+El cambio de estado de MS2 consta como PATCH con HTTP 200. Las solicitudes
+POST de MS1 para registrar pasajero,
+emitir ticket y hacer check-in constan con HTTP 201 en la captura de Tickets.
+El registro de una incidencia en MS3 consta como POST con HTTP 201.
+Su cambio de estado de recurso consta como PATCH con HTTP 200.
+Las dos lecturas específicas de MS4 sí constan con HTTP 200 en la
+captura del vuelo 10. La ejecución de Athena y las llamadas entre backends
+requieren evidencias de sus responsables.
 
 \subsection{Evidencias del despliegue}
 \label{sec:evidencias-frontend}
 Las capturas se guardan en \path{docs/evidencias/frontend/} y sus copias para
-el informe en \path{informe/latex/imagenes/}. No se obtuvo evidencia de una
-transición PATCH de MS2 ni de escrituras de MS3; estas pruebas siguen pendientes.
+el informe en \path{informe/latex/imagenes/}.
 \evidenciafrontend{frontend-vuelos.png}{Consulta y detalle MS2 (E-5.1a).}{fig:fe-vuelos}
+\evidenciafrontend{frontend-estado-vuelo.png}{Cambio de LA2113 a Embarcando mediante PATCH con HTTP 200 en MS2 (E-5.1b).}{fig:fe-estado-vuelo}
 \evidenciafrontend{frontend-manifiesto.png}{Manifiesto MS4 del vuelo 9; dos pasajeros y un check-in, con campos no informados (E-5.1c).}{fig:fe-manifiesto}
-\evidenciafrontend{frontend-ticket-checkin.png}{Emisión y check-in MS1 con vuelos MS2 (E-5.1d).}{fig:fe-ticket}
+\evidenciafrontend{frontend-manifiesto-network.png}{Manifiesto del vuelo 10 y dos solicitudes MS4 con HTTP 200 en Network (E-5.1c).}{fig:fe-manifiesto-network}
+\evidenciafrontend{frontend-ticket-checkin.png}{Ticket emitido y check-in visible con datos de prueba (E-5.1d).}{fig:fe-ticket}
+\evidenciafrontend{frontend-ticket-network.png}{Registro de pasajero, emisión y check-in de MS1 con HTTP 201 en Network (E-5.1d).}{fig:fe-ticket-network}
 \evidenciafrontend{frontend-infraestructura.png}{Consulta de recursos e incidencias MS3 (E-5.1e).}{fig:fe-infra}
+\evidenciafrontend{frontend-incidencia-post.png}{Registro de incidencia MS3 mediante POST con HTTP 201 (E-5.1e).}{fig:fe-incidencia-post}
+\evidenciafrontend{frontend-recurso-patch.png}{Cambio de MGA-04 mediante PATCH de MS3 con HTTP 200 (E-5.1e).}{fig:fe-recurso-patch}
 \evidenciafrontend{frontend-dashboard.png}{Cinco indicadores recibidos de MS5; origen Athena por acreditar (E-5.1f).}{fig:fe-dashboard}
 \evidenciafrontend{frontend-swagger.png}{Catálogo MS1--MS5 con contrato MS1 cargado (E-5.1g).}{fig:fe-swagger}
 \evidenciafrontend{frontend-responsive.png}{Vista móvil sin desbordamiento horizontal (E-5.1h).}{fig:fe-responsive}
 \evidenciafrontend{frontend-network.png}{Cinco solicitudes GET de MS5 con HTTP 200 en Network (E-5.2).}{fig:fe-network}
-\evidenciafrontend{frontend-amplify.png}{Implementación exitosa y dominio HTTPS en Amplify (E-5.3).}{fig:fe-amplify}
+\evidenciafrontend{frontend-amplify.png}{Implementación inicial exitosa y dominio HTTPS en Amplify (E-5.3).}{fig:fe-amplify}
 
 \subsection{Fuentes}
 La descripción se basa en el README del frontend, \path{src/api/client.ts},
