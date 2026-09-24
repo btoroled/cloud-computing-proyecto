@@ -4,7 +4,7 @@ Cada dueño de microservicio deja aquí (o enlaza desde su repo) el modelo de da
 
 | Archivo | Responsable | Estado |
 |---|---|---|
-| `ms1-mysql-er.png` / `.drawio` — E/R de MySQL (`persona`, `pasajero`, `categoria_migratoria`, `ticket`, `checkin`, `equipaje`) | Guillermo | ⬜ pendiente |
+| `ms1-mysql-er.png` / `.drawio` — E/R de MySQL (`persona`, `pasajero`, `categoria_migratoria`, `ticket`, `checkin`, `equipaje`) | Guillermo | ✅ listo (`ms1-mysql-er.png`) |
 | `ms2-postgres-er.png` / `.drawio` — E/R de PostgreSQL (`vuelo`, `aerolinea`, `aeronave`, `asiento`, `empleado`, `tripulacion`, `operativo_tierra`, `opera_tripulacion`) | Mariano | ⬜ pendiente |
 | `ms3-mongo-schemas.md` — JSON Schema de las colecciones `recursos`, `incidencias`, `asignaciones` | Edinson | ⬜ pendiente |
 | `er-catalogo-datalake.drawio` — E/R del catálogo de Glue (todas las tablas + claves de join) | Fabricio | ⬜ pendiente |
