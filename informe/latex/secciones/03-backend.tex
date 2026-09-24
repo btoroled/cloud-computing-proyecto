@@ -175,7 +175,12 @@ Flyway y documentación OpenAPI con springdoc.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms2.png}
+  \IfFileExists{imagenes/swagger-ms2.png}{%
+    \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms2.png}%
+  }{%
+    \fbox{\parbox{0.90\linewidth}{\centering\textbf{Swagger-UI de MS2}\par
+    Copiar \texttt{swagger-ms2.png} a \texttt{imagenes/} y recompilar.}}%
+  }
   \caption{Swagger-UI de MS2 (\texttt{/docs}) por la URL pública. Evidencia E-3.2.1.}
   \label{fig:swagger-ms2}
 \end{figure}
@@ -269,18 +274,117 @@ empaqueta como contenedor Docker independiente y se ejecuta una sola
 vez contra la base de datos objetivo.
 
 \subsubsection{MS3 --- Infraestructura / Incidencias (Edinson)}
-\pendiente{Documentar los esquemas JSON de \texttt{recursos},
-\texttt{incidencias} y \texttt{asignaciones}, los endpoints CRUD, la
-validación \texttt{MS3$\to$MS2} al crear una incidencia con
-\texttt{retrasa\_vuelos[]}, y el seed de 20\,000 incidencias con la
-evidencia del \texttt{db.incidencias.countDocuments()}. Ya recolectada:
-25\,000 incidencias reales (verificadas con \texttt{countDocuments()}) y log
-real de \texttt{MS3$\to$MS2}, 23-Set-2026 --
-\texttt{docs/evidencias/backend/ms3-count-2026-09-23.txt} y
-\texttt{docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt}. Swagger-UI
-agregado hoy en \texttt{/api/infra/docs} (MS3-09) -- pendiente de que la
-imagen se publique en Docker Hub (bloqueado por permisos del token, ver
-\texttt{docs/plan/personas/benja.md}).}
+MS3 gestiona la infraestructura aeroportuaria: el inventario de
+\textbf{recursos} (mangas y radares), las \textbf{incidencias}
+operativas y las \textbf{asignaciones} vuelo--recurso. Se implementa en
+Node.js con Express 4 y Mongoose sobre MongoDB 7 (base
+\texttt{infra\_db}). Escucha en el puerto 3003 en local (8003 en
+producción, \texttt{ms2:8002} como \texttt{MS2\_URL}) bajo el prefijo
+\texttt{/api/infra}, más \texttt{GET /health} para los \emph{health
+checks} del compose de producción.
+
+\paragraph{Modelo de datos.}
+Tres colecciones validadas con \textbf{AJV} (JSON Schema) antes de
+insertar; los esquemas viven en \texttt{src/schemas/} y se documentan en
+\texttt{docs/er/ms3-mongo-schemas.md}:
+\begin{itemize}
+  \item \texttt{recursos}: \texttt{id} entero, \texttt{nombre\_tecnico\_locacion}
+    y \texttt{tipo} (\texttt{manga} o \texttt{radar}), más un
+    subdocumento específico del tipo: \texttt{manga} con
+    \texttt{estado\_acople} (\texttt{Libre}, \texttt{Ocupado},
+    \texttt{Mantenimiento}, \texttt{Inoperativa}), \texttt{longitud} y
+    \texttt{clase\_max} (letra \texttt{A}--\texttt{F}); o \texttt{radar}
+    con \texttt{rango\_alcance}, \texttt{frecuencia} (\texttt{Banda L},
+    \texttt{Banda S}, \texttt{Banda C}, \texttt{Banda X}) y
+    \texttt{estado\_radar}.
+  \item \texttt{incidencias}: \texttt{id}, \texttt{gravedad}
+    (\texttt{Leve}, \texttt{Moderada}, \texttt{Alta}, \texttt{Critica}),
+    \texttt{descripcion}, \texttt{tipo\_incidencia}
+    (\texttt{Falla\_Radar}, \texttt{Inundacion},
+    \texttt{Falta\_Combustible}, \texttt{Saturacion\_Vial},
+    \texttt{Manga\_Inoperativa}, \texttt{Otro}), \texttt{fecha\_reporte}
+    y \texttt{fecha\_cierre} opcional (nulo mientras está abierta), más
+    los arreglos \texttt{afecta\_recursos[]} (\texttt{recurso\_id}) y
+    \texttt{retrasa\_vuelos[]} (\texttt{vuelo\_id}). Esta colección es
+    la que el data lake aplana en tres archivos (Sección~\ref{sec:data-science}).
+  \item \texttt{asignaciones}: \texttt{recurso\_id} y \texttt{vuelo\_id}
+    obligatorios, \texttt{fecha\_inicio}/\texttt{fecha\_fin} opcionales
+    y \texttt{estado\_asignacion} (\texttt{Programada}, \texttt{En\_Curso},
+    \texttt{Finalizada}, \texttt{Cancelada}).
+\end{itemize}
+Las consultas por identificador usan \texttt{findOne(\{ id \})} sobre un
+índice único \texttt{id\_1}: el esquema de negocio expone el
+\texttt{id} de dominio en lugar del \texttt{\_id} generado por Mongo.
+
+\paragraph{Endpoints implementados.}
+\begin{itemize}
+  \item \textbf{Recursos}: \texttt{GET /recursos} con filtros
+    \texttt{?tipo=} y \texttt{?estado=}, \texttt{GET /recursos/\{id\}},
+    \texttt{POST /recursos} y \texttt{PATCH /recursos/\{id\}/estado}
+    (cambia \texttt{estado\_acople} en mangas o \texttt{estado\_radar}
+    en radares).
+  \item \textbf{Incidencias}: \texttt{GET /incidencias} con filtros
+    \texttt{?tipo=}, \texttt{?desde=} y \texttt{?hasta=},
+    \texttt{GET /incidencias/\{id\}}, \texttt{POST /incidencias} y
+    \texttt{PATCH /incidencias/\{id\}/cierre}.
+  \item \textbf{Asignaciones}: \texttt{GET /asignaciones} con
+    \texttt{?vuelo\_id=} y \texttt{?recurso\_id=} y
+    \texttt{POST /asignaciones}.
+\end{itemize}
+
+\paragraph{Consumo de MS2 y reglas de negocio.}
+Al crear una incidencia, cada \texttt{vuelo\_id} de
+\texttt{retrasa\_vuelos[]} se valida con
+\texttt{GET /api/vuelos/\{id\}/exists} de MS2 (MS3$\to$MS2). El cliente
+\texttt{ms2Client} usa \texttt{fetch} nativo con timeout de 3\,s y
+traduce la respuesta de MS2 así: \texttt{404} del MS2 (vuelo inexistente)
+$\to$ \texttt{502 DEPENDENCIA\_ERROR}; vuelo existente pero
+\texttt{Cancelado} $\to$ \texttt{422 VUELO\_NO\_EXISTE}; MS2 caído o sin
+respuesta $\to$ \texttt{502 DEPENDENCIA\_ERROR} o
+\texttt{503 DEPENDENCIA\_TIMEOUT}. \texttt{POST /asignaciones} repite esa
+validación y añade dos reglas: el recurso debe estar \texttt{Libre}
+(solo aplica a mangas; si no, \texttt{409 RECURSO\_OCUPADO}), y
+\texttt{clase\_max} de la manga debe ser mayor o igual que la clase de
+la aeronave del vuelo, obtenida de \texttt{GET /api/vuelos/aeronaves/...}
+de MS2 (\texttt{422 ACOPLE\_CLASE\_INVALIDO}). El cierre de incidencias
+(\texttt{PATCH /incidencias/\{id\}/cierre}) fija \texttt{fecha\_cierre}
+y rechaza un segundo cierre con \texttt{409 INCIDENCIA\_YA\_CERRADA}.
+Los errores siguen el contrato común (\texttt{docs/contratos/errores.md})
+con el formato \texttt{\{ error: \{ code, message, status, details,
+service, timestamp \} \}}.
+
+El consumo real quedó verificado contra producción el 23-Set-2026:
+\texttt{POST /api/infra/incidencias} con
+\texttt{retrasa\_vuelos=[\{vuelo\_id: 999999\}]} provocó la llamada
+saliente \texttt{[MS3$\to$MS2] GET http://ms2:8002/api/vuelos/999999/exists}
+en el log del contenedor, y MS3 tradujo el \texttt{404} de MS2 a
+\texttt{502 DEPENDENCIA\_ERROR}
+(\texttt{docs/evidencias/infra/ms3-consume-ms2-2026-09-23.txt}),
+confirmando que la integración no es un mock.
+
+\paragraph{Carga masiva y volumen.}
+El generador compartido del \emph{data squad} (misma semilla, orden
+MS2$\to$MS1$\to$MS3) emitió \textbf{500 recursos}, \textbf{25\,000
+incidencias} y \textbf{40\,000 asignaciones}, con \texttt{vuelo\_id} en
+el rango 1--25\,000 de MS2 para que los \emph{joins} del data lake no
+queden vacíos. Se cargaron una única vez con \texttt{mongoimport} contra
+la base \texttt{infra} en la VM-DB; la evidencia es
+\texttt{db.incidencias.countDocuments()} = 25\,000 ($\geq$ 20\,000
+exigidos) verificado con \texttt{mongosh} el 23-Set-2026
+(\texttt{docs/evidencias/backend/ms3-count-2026-09-23.txt}).
+La \texttt{ingesta-ms3} (DS-08) se ejecutó contra la BD real y subió a
+\texttt{s3://mla-aeropuerto-lake/raw/ms3/} cinco archivos planos:
+\texttt{recurso} (500), \texttt{incidencia} (25\,000),
+\texttt{incidencia\_afecta\_recurso} (50\,136),
+\texttt{incidencia\_retrasa\_vuelo} (46\,678) y \texttt{asignacion}
+(40\,000).
+
+\pendiente{Swagger-UI de MS3 (\texttt{swagger-ui-express}) no está
+implementado en el código (falta la dependencia y la ruta
+\texttt{/api/infra/docs}), por lo que el bullet compartido que afirma
+que los cinco microservicios exponen \texttt{/docs} es falso para MS3.
+Pendiente: agregar \texttt{swagger-ui-express}, publicar la imagen y
+adjuntar la captura como Evidencia E-3.3.1 (MS3-09).}
 
 \subsubsection{MS4 --- Manifiesto de vuelo (Fabricio)}
 MS4 es un agregador HTTP sin base de datos propia. Recibe una petición
