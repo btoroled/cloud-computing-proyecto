@@ -28,14 +28,143 @@ agrega vía HTTP; MS5 consulta el data lake.}
 \subsection{Implementación y decisiones}
 
 \subsubsection{MS1 --- Pasajeros / Tickets (Guillermo)}
-\pendiente{Documentar los endpoints implementados, migraciones Alembic,
-seed de 20\,000 tickets, la validación \texttt{MS1$\to$MS2} en
-\texttt{POST /tickets} y la evidencia del \texttt{COUNT(*)} en las tablas
-de volumen (\texttt{ticket}, \texttt{equipaje}). Evidencia real ya recolectada
-(carga de 25\,000 tickets contra la VM-DB de producción y log real de la
-llamada saliente \texttt{MS1$\to$MS2}, 23-Set-2026):
-\texttt{docs/evidencias/backend/ms1-count-2026-09-23.txt} y
-\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}.}
+MS1 cubre el dominio de pasajeros del aeropuerto Jorge Chávez: categorías
+migratorias, pasajeros, emisión de tickets, check-in y equipaje. Se
+implementa en Python 3.12 con FastAPI 0.115, SQLAlchemy 2 como ORM, Alembic
+para las migraciones versionadas y MySQL 8. La API corre en el puerto
+interno 8001 bajo el prefijo público \texttt{/api/pasajeros} (nginx). La
+URL de MS2 se configura por variable de entorno
+(\texttt{MS2\_BASE\_URL}, cliente \texttt{httpx} con timeout de 3\,s y 2
+reintentos), de modo que el mismo código consume el MS2 real en producción
+o el mock local en desarrollo.
+
+\begin{figure}[htbp]
+  \centering
+  \IfFileExists{imagenes/swagger-ms1.png}{%
+    \includegraphics[width=0.95\linewidth]{imagenes/swagger-ms1.png}%
+  }{%
+    \fbox{\parbox{0.90\linewidth}{\centering\textbf{Swagger-UI de MS1}\par
+    Copiar \texttt{swagger-ms1.png} a \texttt{imagenes/} y recompilar.}}%
+  }
+  \caption{Swagger-UI de MS1 (\texttt{/docs}). Evidencia E-3.1.1.}
+  \label{fig:swagger-ms1}
+\end{figure}
+
+\paragraph{Modelo de datos.}
+El esquema (una migración Alembic, revisión \texttt{6ca35b598ec2}) tiene
+seis tablas sobre MySQL 8 con los enums canónicos de
+\texttt{contratos/enums.md} (sin tildes, para que los \texttt{JOIN} de
+Athena coincidan):
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.20\textwidth}p{0.22\textwidth}p{0.34\textwidth}X}
+\toprule
+Tabla (PK) & Columnas & Relación \\
+\midrule
+\texttt{persona} (\texttt{id\_persona}) & \texttt{nombre},
+\texttt{apellido}, \texttt{fecha\_nacimiento} & superclase de identidad \\
+\texttt{categoria\_migratoria} (\texttt{id}) & \texttt{nombre} ENUM,
+\texttt{tarifa} & \texttt{CHECK(tarifa >= 0)}; 1--N \texttt{pasajero}
+(3 filas: Nacional 12.50, Internacional 38.45, Transito 18.00 PEN) \\
+\texttt{pasajero} (\texttt{id\_persona}) & \texttt{tipo\_documento} ENUM,
+\texttt{numero\_documento}, \texttt{id\_categoria} &
+\texttt{UNIQUE(tipo\_documento, numero\_documento)}; 1:1 IsA con
+\texttt{persona} \\
+\texttt{ticket} (\texttt{id\_ticket}) & \texttt{precio},
+\texttt{fecha\_emision}, \texttt{estado\_boarding} ENUM,
+\texttt{id\_vuelo}, \texttt{id\_persona} & \texttt{id\_vuelo} soft
+$\to$ MS2; rango 1--60\,000; 1--1 \texttt{checkin} \\
+\texttt{checkin} (\texttt{id\_ticket}) & \texttt{fecha\_hora},
+\texttt{counter}, \texttt{con\_equipaje} & entidad débil 1:1 con
+\texttt{ON DELETE CASCADE} \\
+\texttt{equipaje} (\texttt{id} Tag BHS) & \texttt{peso},
+\texttt{id\_persona}, \texttt{id\_vuelo} & \texttt{CHECK(peso > 0)};
+\texttt{id\_vuelo} soft $\to$ MS2 \\
+\bottomrule
+\end{tabularx}
+\caption{Esquema MySQL de MS1 (6 tablas).}
+\label{tab:ms1-db}
+\end{table}
+
+\texttt{ticket.id\_vuelo} y \texttt{equipaje.id\_vuelo} son
+\textbf{referencias suaves} a MS2: no hay FK física y su integridad se
+valida por REST al escribir (Sección~\ref{sec:transformaciones}). El
+diagrama E/R de la base se muestra en la Figura~\ref{fig:er-ms1}.
+
+\begin{figure}[htbp]
+  \centering
+  \IfFileExists{imagenes/ms1-mysql-er.png}{%
+    \includegraphics[width=0.95\linewidth]{imagenes/ms1-mysql-er.png}%
+  }{%
+    \fbox{\parbox{0.90\linewidth}{\centering\textbf{E/R de MS1}\par
+    Copiar \texttt{ms1-mysql-er.png} a \texttt{imagenes/} y recompilar.}}%
+  }
+  \caption{E/R de la base MySQL de MS1 (6 tablas). Evidencia E-3b.1.}
+  \label{fig:er-ms1}
+\end{figure}
+
+\paragraph{Endpoints implementados.}
+Bajo la base pública \texttt{/api/pasajeros}:
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{p{0.06\textwidth}p{0.19\textwidth}p{0.50\textwidth}X}
+\toprule
+Método & Ruta & Descripción \\
+\midrule
+GET & \texttt{/health}, \texttt{/health/db} & Estado del servicio y de la conexión MySQL \\
+GET & \texttt{/categorias-migratorias} & Las 3 categorías con tarifa TUUA \\
+POST & \texttt{/pasajeros} & Crea \texttt{persona}+\texttt{pasajero}; 409 si documento duplicado \\
+GET & \texttt{/pasajeros} & Lista con filtros \texttt{tipo\_documento} y \texttt{numero\_documento} \\
+GET & \texttt{/pasajeros/\{id\}} & Pasajero por id; 404 si no existe \\
+GET & \texttt{/pasajeros/\{id\}/tickets} & Tickets de un pasajero \\
+POST & \texttt{/tickets} & Emite ticket; valida el vuelo contra MS2 \\
+GET & \texttt{/tickets} & Lista con filtro \texttt{vuelo\_id} \\
+GET & \texttt{/tickets/\{id\}} & Ticket por id; 404 si no existe \\
+POST & \texttt{/tickets/\{id\}/checkin} & Check-in 1:1; segundo intento $\to$ 409 \\
+POST & \texttt{/equipajes} & Registra equipaje (Tag BHS único); valida vuelo contra MS2 \\
+GET & \texttt{/equipajes} & Lista con filtros \texttt{pasajero\_id} y \texttt{vuelo\_id} \\
+\bottomrule
+\end{tabularx}
+\caption{Endpoints de MS1.}
+\label{tab:ms1-endpoints}
+\end{table}
+
+Los errores siguen el contrato común: cuerpo
+\texttt{\{"error": \{"code": ..., "message": ...\}\}} con los códigos 400
+(validación), 404 (no encontrado), 409 (duplicado), 422 (precondición no
+cumplida, e.\,-g.\ vuelo inexistente o cancelado) y 502 (MS2 no
+disponible).
+
+\paragraph{Consumo entre servicios (MS1$\to$MS2).}
+Al emitir un ticket o registrar un equipaje, MS1 valida el vuelo con
+\texttt{GET /api/vuelos/\{id\}/exists} de MS2. En la verificación real
+contra producción (23-Set-2026), \texttt{POST /api/pasajeros/tickets} con
+\texttt{\{"precio": 45.5, "fecha\_emision": "2026-09-23", "id\_vuelo": 1,
+"id\_persona": 100003\}} respondió \texttt{201} y el log del contenedor
+registró la llamada saliente \texttt{Saliente MS1$\to$MS2: GET
+http://ms2:8002/api/vuelos/1/exists $\to$ 200}. El log completo está en
+\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}.
+
+\paragraph{Carga masiva y volumen.}
+La base se pobló con los CSVs compartidos de
+\texttt{aeropuerto-data-science/seeds/} (generador de Dev D, \texttt{SEED}
+fijo) mediante \texttt{app/scripts/load\_csv.py}, ejecutado contra la VM
+de producción con inserciones por lotes vía SQLAlchemy. El
+\texttt{COUNT(*)} real (23-Set-2026) fue: \texttt{persona} 60\,000,
+\texttt{pasajero} 60\,000, \texttt{ticket} 25\,000, \texttt{equipaje}
+22\,814 y \texttt{checkin} 16\,577, superando el mínimo de 20\,000 en
+\texttt{ticket} y \texttt{equipaje}
+(\texttt{docs/evidencias/backend/ms1-count-2026-09-23.txt}).
+
+\paragraph{Pruebas.}
+La API se acompaña de 32 pruebas \texttt{pytest} sobre una base SQLite
+in-memory (sin MySQL) que cubren los happy paths de pasajero, ticket,
+check-in y equipaje, y los errores del contrato (404/409/422/502),
+incluida la validación MS1$\to$MS2 de vuelo inexistente y cancelado. Smoke
+end-to-end completo y log MS1$\to$MS2 en \texttt{smoke\_test.txt} y
+\texttt{log\_ms1\_ms2.txt} del repositorio.
 
 \subsubsection{MS2 --- Vuelos / Operaciones (Mariano)}
 MS2 es responsable del dominio operacional del aeropuerto: vuelos,
@@ -235,6 +364,12 @@ para las llamadas a MS2.
     especificación en \texttt{/openapi.json} y Swagger-UI en
     \texttt{/docs}. Los cinco \texttt{openapi.yaml} borrador viven en la
     raíz de cada repositorio.
+  \item MS1 supera el mínimo de 20\,000 registros en sus dos tablas de
+    volumen: \texttt{ticket} (25\,000) y \texttt{equipaje} (22\,814),
+    verificado con \texttt{COUNT(*)} contra la VM-DB de producción el
+    23-Set-2026 (\texttt{docs/evidencias/backend/ms1-count-2026-09-23.txt}),
+    y consume a MS2 de forma verificada
+    (\texttt{docs/evidencias/backend/consumo-entre-microservicios-2026-09-23.txt}).
   \item MS2 supera el mínimo de 20\,000 registros en sus dos tablas de
     volumen: \texttt{vuelo} (20\,500) y \texttt{asiento} (21\,000),
     verificado con \texttt{COUNT(*)} contra la VM-DB de producción el
@@ -270,6 +405,5 @@ para las llamadas a MS2.
     código.
 \end{itemize}
 
-\pendiente{Adjuntar los \texttt{COUNT(*)} de MS1, MS2 y MS3 tras la
-carga masiva. Adjuntar el JSON completo del manifiesto y el JSON de una
+\pendiente{Adjuntar el JSON completo del manifiesto y el JSON de una
 consulta analítica ejecutada contra la infraestructura desplegada.}
