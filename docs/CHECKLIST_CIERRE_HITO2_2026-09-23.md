@@ -1,6 +1,6 @@
 # Checklist actualizado de cierre — Hito 2
 
-**Corte:** 23 de septiembre de 2026, 22:08 (Lima). **Entrega indicada en el README del proyecto:** 23:59 en Canvas. Este documento distingue lo comprobado de lo que todavía necesita una prueba o evidencia; no convierte una tarea en terminada solo porque la pantalla abra.
+**Corte:** 23 de septiembre de 2026, 22:37 (Lima). **Entrega indicada en el README del proyecto:** 23:59 en Canvas. Este documento distingue lo comprobado de lo que todavía necesita una prueba o evidencia; no convierte una tarea en terminada solo porque la pantalla abra.
 
 ## 1. Ya comprobado: no repetir estos arreglos esta noche
 
@@ -20,7 +20,7 @@ Marca cada casilla únicamente al tener el resultado y, cuando aplique, su archi
 - [ ] **Completar portada (Benja/equipo):** apellidos y códigos faltantes, nombre del profesor y logo UTEC o una decisión explícita de omitirlo. En `informe/latex/portada.tex` de `main` todavía hay marcadores `[pendiente]`.
 - [x] **Capturar y guardar evidencia frontend (Alexander):** Dashboard con cinco tarjetas y Network con cinco GET 200; Operaciones con vuelo/detalle, APIs con una especificación cargada, Infraestructura, móvil y ticket/check-in. Las capturas están en `docs/evidencias/frontend/` y sus copias seleccionadas en `informe/latex/imagenes/`.
 - [ ] **Probar los flujos de escritura que aún no están acreditados (Alexander + dueños de MS):** ticket/check-in, cambio de estado de un vuelo de prueba, y cambio de recurso/creación de incidencia. No alterar registros reales sin coordinar; si un flujo no se puede probar, declararlo como pendiente en vez de inventar un éxito.
-- [ ] **Probar manifiesto MS4 con un vuelo existente (Alexander/Fabricio):** el frontend desplegado pidió `/api/manifiesto/manifiesto/4` y recibió 404; OpenAPI publica `/api/manifiesto/{vuelo_id}`. El frontend está corregido localmente, pero necesita despliegue y nueva prueba de manifiesto y resumen.
+- [x] **Probar manifiesto MS4 con un vuelo existente (Alexander/Fabricio):** corregidas y desplegadas la ruta del frontend y la URL interna MS4→MS1. El manifiesto del vuelo 9 cargó sin aviso de parcialidad; captura guardada. Falta una captura Network específica si se exige acreditar ambas solicitudes por separado.
 - [ ] **Acreditar Athena (Fabricio):** adjuntar captura de consola o identificadores/resultados de las cinco consultas exitosas, y confirmar de qué tablas/ingestas provienen. Los HTTP 200 del frontend prueban integración, no por sí solos toda la procedencia de datos.
 - [ ] **Integrar las capturas al LaTeX (Alexander/Benja):** copiar las seleccionadas a `informe/latex/imagenes/` con los nombres que ya referencia `secciones/05-frontend.tex`; actualizar texto, URLs y estado de prueba. No dejar una leyenda que diga «pendiente» junto a una prueba ya terminada.
 - [ ] **Cerrar secciones y conclusiones (Benja + dueños):** revisar los `\pendiente{...}` restantes, en especial arquitectura, MS3/MS4, Athena, recuperación tras corte y conclusiones. Resolver lo que tenga evidencia y declarar honestamente lo que no alcance.
@@ -34,7 +34,7 @@ Marca cada casilla únicamente al tener el resultado y, cuando aplique, su archi
 | Operaciones / MS2 | Tabla y detalle de vuelo capturados. | Transición `PATCH` válida de un registro de prueba. |
 | Tickets / MS1 | Ticket emitido y check-in completado con datos ficticios; captura guardada. | Captura Network de emisión/check-in, si se exige acreditación de llamadas. |
 | Infraestructura / MS3 | Inventario e incidencias visibles; captura guardada. | `PATCH` de recurso y `POST` de incidencia de prueba con persistencia. |
-| Manifiesto / MS4 | OpenAPI muestra la ruta correcta; frontend desplegado pide ruta duplicada y recibe 404. | Desplegar fix y comprobar manifiesto y resumen en UI/Network. |
+| Manifiesto / MS4 | Ruta corregida y manifiesto del vuelo 9 visible sin aviso de parcialidad. | Captura Network de manifiesto y resumen si se exige; explicar los campos no informados por MS4. |
 | Analítica / MS5 | Cinco indicadores y cinco GET 200 capturados. | Evidencia de consultas Athena/procedencia. |
 | APIs / Swagger | Catálogo y contrato MS1 cargado en captura. | Confirmar visualmente los otros cuatro contratos si se exige. |
 | Responsive | Infraestructura capturada en vista móvil de 682 px. | Revisar otras vistas móviles si se exige. |
